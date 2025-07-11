@@ -35,10 +35,10 @@ it live. Nothing about local development changes.
 
 ## Once, to set it up
 
-**1. Push the code to GitHub.**
+**1. Push the code to GitHub.** It is already on `main`:
 
 ```bash
-git push -u origin local-postgres-and-password-auth
+git push origin main
 ```
 
 **2. Import it into Vercel.** At [vercel.com/new](https://vercel.com/new),
