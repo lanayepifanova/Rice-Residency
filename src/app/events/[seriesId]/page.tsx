@@ -1,4 +1,5 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
 import { nextOccurrenceHref } from "@/lib/server/series";
 import { SideNav } from "../../components/SideNav";
 import { SiteHeader } from "../../components/SiteHeader";
@@ -12,7 +13,9 @@ export const dynamic = "force-dynamic";
  *
  * A series with no dates on it yet has nothing to forward to. It used to bounce
  * to the home page, which read as a broken link — the Parties and Dinners
- * entries in the nav both did — so it says so instead.
+ * entries in the nav both did — so it says so instead. A series id that matches
+ * nothing at all is a different answer: "coming soon" would be a promise about
+ * an event nobody is planning, so that one is a 404.
  */
 export default async function SeriesPage({ params, searchParams }: PageProps<"/events/[seriesId]">) {
   const { seriesId } = await params;
@@ -20,6 +23,15 @@ export default async function SeriesPage({ params, searchParams }: PageProps<"/e
   const href = await nextOccurrenceHref(seriesId);
 
   if (href === "/") {
+    const series = await prisma.eventSeries.findUnique({
+      where: { id: seriesId },
+      select: { id: true },
+    });
+
+    if (!series) {
+      notFound();
+    }
+
     return (
       <>
         <SiteHeader />

@@ -59,8 +59,8 @@ Variables**, add:
 | --- | --- | --- |
 | `DIRECT_URL` | the same value as `DATABASE_URL` | Prisma's CLI wants a non-pooled connection under its own name. Copy `DATABASE_URL`'s value into it. |
 
-That is the whole list. `ALLOW_SIGNUPS` is deliberately absent — leaving it
-unset is what keeps the live site read-only for strangers.
+That is the whole list. There are no auth secrets, API keys, or storage tokens
+to set: the site has no accounts and writes no files.
 
 **5. Deploy.** Push, or hit **Redeploy**. The build runs `prisma generate` and
 `next build`; it does not touch the database, so it cannot fail on an empty one.
@@ -91,43 +91,31 @@ the intended direction — this machine is the copy of record.
 
 **The code changed:** `git push`. Vercel rebuilds by itself.
 
-## Two things to know before sharing the link
+## One thing to know before sharing the link
 
-**Change the passwords that matter.** Every seeded account has the password
-`residency`, and that fact is written in the README, which is in the repository.
-On localhost that is convenient. On a public URL it means anyone who reads the
-repo can sign in as an organizer and edit the calendar. At minimum, change your
-own:
+**Profile photos are committed files, not uploads.** Every face in the directory
+is an image under `public/people/`, pointed at by that person's `avatarUrl`. The
+site has no upload form, so changing someone's photo is: drop the image in
+`public/people/`, point their row at it locally, and push the data live.
 
 ```bash
-npm run db:set-password -- lana@example.com   # then push it live
+psql rice_residency -c "update \"User\" set \"avatarUrl\" = '/people/jane-doe.jpg' where username = 'jane-doe'"
 npm run db:push-live
 ```
 
-There is no password reset email in this app, so a forgotten password is fixed
-the same way.
+## What visitors can do
 
-**Nobody can upload a profile photo on the live site.** Vercel's filesystem is
-read-only, and `public/uploads/` is where this app puts photos. Every face
-currently in the directory is a committed file under `public/people/`, so the
-live site looks right — but a person who signs in and picks a new photo gets a
-polite error instead of an upload. The rest of the profile form saves normally.
-To change someone's photo: drop the image in `public/people/`, point their
-`avatarUrl` at it locally, and push.
+Everything, and nothing. Every page is public and every page is read-only:
 
-## What visitors can and cannot do
+| | Anyone with the link |
+| --- | --- |
+| Read the calendar, events, archive, directory, standings | yes |
+| Open a share link | yes |
+| Change anything at all | no |
 
-| | Signed out | Signed in |
-| --- | --- | --- |
-| Read the calendar, events, archive, directory, standings | yes | yes |
-| Open a share link | yes | yes |
-| Create an account | **no** | — |
-| RSVP, create events, edit a profile | no | yes |
-
-Sign-up is closed by `src/lib/signups.ts`, both in the form and in the Server
-Action behind it — hiding the link alone would leave the action reachable by
-anyone who posts to it. To reopen it later, set `ALLOW_SIGNUPS=true` in Vercel's
-environment variables; it is read per request, so no rebuild is needed.
+There is no sign-in form, no sign-up form, no RSVP button, no host controls, and
+no HTTP API — the deployment has no writable surface to guard. Changes to the
+house data are made on the laptop and pushed up.
 
 ## If something goes wrong
 

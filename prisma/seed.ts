@@ -1,7 +1,6 @@
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { hashPassword } from "../src/lib/server/password";
 import { buildInstances, type RecurrenceRuleInput } from "../src/lib/domain/recurrence";
 import { eventImagePool, seriesImageAt } from "../src/lib/domain/event-images";
 
@@ -32,7 +31,6 @@ const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) })
  * lana@example.com and you are the organizer. Overridable, and irrelevant in
  * any real use since these addresses are all @example.com.
  */
-const SEED_PASSWORD = process.env.SEED_PASSWORD ?? "residency";
 
 /** Everything Rice Residency runs is in Houston, so every time is Central. */
 const TIMEZONE = "America/Chicago";
@@ -186,21 +184,18 @@ async function main() {
     // Never re-hash over a password someone actually chose: re-running the seed
     // refreshes profile copy, and silently resetting a login would be a nasty
     // way to find that out.
-    const passwordHash = existing?.passwordHash ?? (await hashPassword(SEED_PASSWORD));
 
     const row = await prisma.user.upsert({
       where: { email: user.email },
       create: {
         id: existing?.id ?? randomUUID(),
         email: user.email,
-        passwordHash,
         membership: "resident",
         name: user.name,
         username: user.username,
         ...profileFields(user),
       },
       update: {
-        passwordHash,
         membership: "resident",
         name: user.name,
         username: user.username,

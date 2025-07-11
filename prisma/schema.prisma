@@ -65,24 +65,22 @@ enum NotificationDeliveryStatus {
 }
 
 model User {
-  /// This app owns identity outright: there is no external auth provider, so
-  /// the id is minted here when the account is created.
+  /// Minted here. Nobody signs in, so a person is a row somebody imported or
+  /// typed, and this is the only identity they have.
   id        String   @id @default(uuid())
   /// Null for most of the directory. The house knows far more people than have
-  /// accounts, and a resident or a coworking regular is a real entry here long
-  /// before they ever sign in. Sign-in is keyed on this, so a row without one
-  /// simply has no way to log in yet.
+  /// an address on file, and a resident or a coworking regular is a real entry
+  /// here either way. Kept unique so an import cannot land the same person
+  /// twice.
   email     String?  @unique
-  /// scrypt hash of the account password, in the format written by
-  /// `src/lib/server/password.ts`. Nullable because a person can exist before
-  /// they have credentials: seeded rows and invited emails both start here.
-  passwordHash String?
-  /// Unknown at sign-up; the user sets it on their profile afterwards.
+  /// Missing on rows imported from an address alone.
   name      String?
-  /// Public handle. Unique when set, but optional so sign-in never blocks on it.
+  /// Public handle, and the directory URL. Unique when set, optional because
+  /// not everyone in the house has one.
   username  String?  @unique
   phone     String?
-  /// Path of the avatar under `public/uploads`, served as a plain static file.
+  /// Path of a committed image under `public/`, served as a plain static file.
+  /// Set by seeding or by hand; there is no upload form.
   avatarUrl String?
   bio       String?
   instagram String?
@@ -130,27 +128,7 @@ model User {
   invitesSent            EventInvite[]           @relation("InviteSender")
   invitesAccepted        EventInvite[]           @relation("InviteRecipient")
   shareLinksCreated      EventShareLink[]
-  sessions               Session[]
   gameScores             GameSessionScore[]
-}
-
-/// A signed-in browser.
-///
-/// Sessions live in the database rather than in a signed cookie so that signing
-/// out actually revokes access instead of merely asking the browser to forget a
-/// token it could still replay.
-model Session {
-  /// SHA-256 of the cookie value, never the value itself. A leaked database
-  /// dump therefore cannot be used to impersonate anyone.
-  tokenHash String   @id
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([expiresAt])
 }
 
 model EventSeries {

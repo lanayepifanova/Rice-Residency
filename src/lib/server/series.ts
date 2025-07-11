@@ -145,8 +145,8 @@ export async function createSeries(
 
 /**
  * Invited people only get an in-app notification if they already have an
- * account; the rest have an invite row waiting, which is claimed on first
- * sign-in by `claimInvites`.
+ * account; the rest have an invite row waiting for whenever this site grows a
+ * way to sign in again.
  */
 async function inviteIntents(
   series: EventSeries,
@@ -176,14 +176,6 @@ async function inviteIntents(
       recipientIds: existing.map((user) => user.id).filter((id) => id !== actorId),
     },
   ];
-}
-
-/** Links pending invites to a user once their email is known. */
-export async function claimInvites(userId: string, email: string): Promise<void> {
-  await prisma.eventInvite.updateMany({
-    where: { email: email.trim().toLowerCase(), acceptedByUserId: null },
-    data: { acceptedByUserId: userId, acceptedAt: new Date() },
-  });
 }
 
 // ---------------------------------------------------------------------------

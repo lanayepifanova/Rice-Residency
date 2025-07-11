@@ -21,11 +21,12 @@ Required, per `.env.example`:
 | --- | --- | --- |
 | `DATABASE_URL` | app runtime | Local Postgres |
 | `DIRECT_URL` | Prisma CLI | Same URL — no pooler in front of it |
-| `SEED_PASSWORD` | optional | Password for seeded accounts; defaults to `residency` |
 | `NEXT_PUBLIC_SITE_URL` | optional | Pins the share-link origin |
+| `LIVE_DATABASE_URL` | `npm run db:push-live` | The deployed database, on the laptop that pushes to it |
 
-There are no third-party keys. Auth and uploads are both handled by the app
-itself, so the whole environment is a database URL.
+There are no third-party keys. The site has no accounts and writes no files, so
+the whole environment is a database URL. Deployment steps are in
+[DEPLOY.md](../DEPLOY.md).
 
 ## Migrations
 
@@ -57,7 +58,17 @@ psql -d rice_residency -c "CREATE ROLE anon NOLOGIN" -c "CREATE ROLE authenticat
 7. `20260816004641_people_profile_details` — remaining profile fields
 8. `20260816005558_instance_cover_image` — per-occurrence cover image
 9. `20260816202545_local_password_auth` — `User.passwordHash` and the `Session`
-   table, replacing the external auth provider
+   table, replacing the external auth provider. Both were dropped again by
+   migration 14 when the site became read-only.
+10. `20260817002743_games_standings` — card games, sittings, and per-player
+    scores
+11. `20260817010500_residents_attendees_and_game_users` — `User.membership`,
+    splitting residents from the coworking regulars
+12. `20260817011607_house_leads` — `User.houseLead`
+13. `20260817015318_event_cover_deck_cursor` — `EventSeries.coverCursor` and
+    `EventInstance.coverIndex`, so a photo is dealt to one date only
+14. `20260817210000_drop_accounts_and_sessions` — drops `User.passwordHash` and
+    the `Session` table. Destructive: see the rollback notes.
 
 ### Review notes
 
@@ -130,8 +141,13 @@ DELETE FROM "_prisma_migrations"
 This drops event invites and profile data permanently. Take a backup first.
 
 Migration 5 does nothing on plain Postgres, so there is nothing to roll back.
-Profile photos are files under `public/uploads/avatars/`; a schema rollback
-never touches them, and deleting them is a separate, manual decision.
+
+Migration 14 dropped `User.passwordHash` and the `Session` table. Rolling it
+back restores the columns but not their contents — the hashes are gone, and
+whoever brings sign-in back sets fresh passwords.
+
+Profile photos are committed files under `public/people/`, referenced by
+`User.avatarUrl`; a schema rollback never touches them.
 
 ## Monitoring
 

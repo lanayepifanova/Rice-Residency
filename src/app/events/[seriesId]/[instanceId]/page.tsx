@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { currentOrigin } from "@/lib/api/origin";
 import { coverImageFor } from "@/lib/domain/event-images";
 import {
   formatDay,
@@ -16,10 +14,7 @@ import {
 import { displayName } from "@/lib/server/profile";
 import { getAttendance } from "@/lib/server/rsvp";
 import { loadInstanceView, occurrenceTitle } from "@/lib/server/series";
-import { shareUrl } from "@/lib/server/share-links";
-import { HostControls } from "../../../components/HostControls";
-import { RsvpControls } from "../../../components/RsvpControls";
-import { SharePanel } from "../../../components/SharePanel";
+import { AttendanceLine } from "../../../components/AttendanceLine";
 import { SideNav } from "../../../components/SideNav";
 import { SiteHeader } from "../../../components/SiteHeader";
 
@@ -61,22 +56,12 @@ export default async function InstancePage({
   }
 
   const { instance, series, past, cancelled } = view;
-  const viewer = await getCurrentUser();
-  const isHost = viewer?.id === series.organizerId;
 
   const [organizer, attendance] = await Promise.all([
     prisma.user.findUnique({ where: { id: series.organizerId } }),
-    getAttendance(instanceId, series.capacity, viewer?.id),
+    getAttendance(instanceId, series.capacity),
   ]);
 
-  const shareLinks = isHost
-    ? await prisma.eventShareLink.findMany({
-        where: { seriesId, revokedAt: null },
-        orderBy: { createdAt: "desc" },
-      })
-    : [];
-
-  const origin = await currentOrigin();
   const { title, description, locationName } = occurrenceTitle(series, instance);
 
   return (
@@ -140,23 +125,10 @@ export default async function InstancePage({
               </div>
             ) : null}
 
-            <RsvpControls
-              seriesId={seriesId}
-              instanceId={instanceId}
+            <AttendanceLine
               capacity={attendance.capacity}
-              waitlistEnabled={series.waitlistEnabled}
-              signedIn={Boolean(viewer)}
               cancelled={cancelled}
               past={past}
-              current={
-                attendance.viewerRsvp
-                  ? {
-                      status: attendance.viewerRsvp.status,
-                      guestCount: attendance.viewerRsvp.guestCount,
-                      waitlistRank: attendance.viewerRsvp.waitlistRank,
-                    }
-                  : null
-              }
             />
           </section>
 
@@ -167,33 +139,6 @@ export default async function InstancePage({
           />
         </article>
 
-        {isHost ? (
-          <>
-            <SharePanel
-              seriesId={seriesId}
-              instanceId={instanceId}
-              links={shareLinks.map((link) => ({
-                id: link.id,
-                url: shareUrl(origin, link.token),
-                instanceId: link.instanceId,
-                openCount: link.openCount,
-              }))}
-            />
-
-            <HostControls
-              seriesId={seriesId}
-              instanceId={instanceId}
-              instanceLabel={formatDay(instance.startsAt, series.timezone)}
-              title={instance.overrideTitle ?? series.title}
-              description={instance.overrideDescription ?? series.description ?? ""}
-              locationName={instance.overrideLocationName ?? series.locationName ?? ""}
-              capacity={series.capacity}
-              waitlistEnabled={series.waitlistEnabled}
-              seriesCancelled={series.status === "cancelled"}
-              instanceCancelled={instance.status === "cancelled"}
-            />
-          </>
-        ) : null}
       </main>
     </>
   );

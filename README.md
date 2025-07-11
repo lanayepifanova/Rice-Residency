@@ -16,10 +16,9 @@ and not only by name.
 
 ## Stack
 
-- Next.js 16 (App Router, Server Components, Server Actions)
+- Next.js 16 (App Router, Server Components)
 - TypeScript
 - PostgreSQL via Prisma 7, running locally
-- Email + password auth and profile photos, both owned by this app
 - Tailwind CSS
 - Vitest
 
@@ -44,14 +43,13 @@ npm run db:seed              # optional: the three house events and a demo direc
 npm run dev
 ```
 
-Everything is on this machine: Postgres holds the data, `public/uploads/` holds
-profile photos, and neither is cleared by refreshing the page or restarting the
-dev server. To see what is stored, open `psql rice_residency`.
+Everything is on this machine: Postgres holds the data, and it is not cleared by
+refreshing the page or restarting the dev server. To see what is stored, open
+`psql rice_residency`.
 
-Seeded accounts sign in with the password `residency` — `lana@example.com` is
-the organizer of all three events. That password is fine while the app only
-answers to localhost; [DEPLOY.md](DEPLOY.md) says what to do about it before the
-app has a public URL.
+The site has no accounts — nothing to sign into, nothing to sign up for. The
+house data is written by the seeds and by hand in `psql`, and everyone else
+reads it.
 
 ## Deploying
 
@@ -65,9 +63,8 @@ npm run db:push-live   # dump the local database, load it into the live one
 
 [DEPLOY.md](DEPLOY.md) has the whole path: Vercel, the database, what to change
 before sharing the link, and what visitors can do once they have it. The short
-version is that the live site is public to read and closed to sign up — anyone
-can browse the calendar and the directory, nobody can mint themselves an
-account.
+version is that the whole site is public and read-only, so there is nothing to
+guard.
 
 ## Quality checks
 
@@ -88,19 +85,17 @@ cleans up after itself, but point it at a development database.
   tested.
 - `src/lib/server/` — everything that touches the database: series, RSVP,
   notifications, share links, profile, feed queries. Integration tested.
-- `src/lib/api/` — request contracts (Zod) and route helpers.
-- `src/app/api/` — the HTTP contract.
-- `src/app/` — pages, Server Actions, and the few client components that need
-  pending and error states.
+- `src/lib/api/` — Zod contracts for the shapes the seeds and server modules
+  pass around.
+- `src/app/` — the pages, all of them server-rendered.
 
-**Auth is local and deliberately simple.** Accounts are an email and a scrypt
-hash (`src/lib/server/password.ts`); a session is a random token in an httpOnly
-cookie whose SHA-256 is a row in `Session` (`src/lib/server/session.ts`), so
-signing out revokes access rather than trusting the browser to forget. There is
-no email sender, which means no password reset — `npm run db:set-password` is
-how one gets reset. Sign-up is open in development and closed in production
-(`src/lib/signups.ts`), which is what makes a public deployment safe to hand out
-without a password reset flow: strangers read, they do not register.
+**Nothing here writes.** There are no accounts, no RSVP buttons, no host
+controls, and no HTTP API — a visitor can read every page and change nothing,
+which is what makes the site safe to hand out as a link. The domain logic behind
+those features is still in `src/lib/server/` and still tested, because the shape
+of an RSVP, a waitlist, and a capacity check did not stop being right when the
+buttons came off. Adding accounts back means adding a way in, not rebuilding
+what happens once someone is through it.
 
 Two more rules are worth knowing before changing anything:
 
@@ -110,8 +105,9 @@ weekly 18:30 event at 18:30 after the clocks change. Occurrences store real UTC
 instants, computed from the two.
 
 **Capacity is settled under a row lock.** `submitRsvp` opens a transaction,
-locks the occurrence row, and only then reads seat totals. Skipping the lock
-reintroduces overselling under concurrent RSVPs.
+locks the occurrence row, and only then reads seat totals. Nothing calls it
+while the site is read-only, but the lock is the reason it is safe to call from
+a button again: skipping it reintroduces overselling under concurrent RSVPs.
 
 ## Docs
 

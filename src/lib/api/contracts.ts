@@ -124,37 +124,6 @@ export const notificationPreferencesSchema = z
   })
   .refine((value) => Object.keys(value).length > 0, { message: "Nothing to update." });
 
-export const profileUpdateSchema = z.object({
-  name: z.string().trim().min(1, "Name is required.").max(80),
-  username: z
-    .string()
-    .trim()
-    .min(3, "Usernames need at least 3 characters.")
-    .max(30)
-    .regex(/^[a-z0-9_.]+$/i, "Usernames can use letters, numbers, dots, and underscores."),
-  bio: z.string().trim().max(280).optional(),
-  riceYear: z.string().trim().max(40).optional(),
-  major: z.string().trim().max(80).optional(),
-  projectName: z.string().trim().max(80).optional(),
-  projectSummary: z.string().trim().max(200).optional(),
-  projectUrl: z
-    .string()
-    .trim()
-    .max(200)
-    .refine((value) => value === "" || /^https?:\/\/\S+$/.test(value), {
-      message: "Use a full link, starting with http:// or https://",
-    })
-    .optional(),
-  pastProjects: z.string().trim().max(600).optional(),
-  helpNeeded: z.string().trim().max(400).optional(),
-  instagram: z.string().trim().max(120).optional(),
-  twitter: z.string().trim().max(120).optional(),
-  birthday: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date like 1994-08-11")
-    .optional(),
-});
-
 /**
  * `from` and `to` on the instances query. Accepts a plain date (2026-09-01) or
  * a full ISO instant, since the contract shows the short form but callers
@@ -169,4 +138,3 @@ export type EventSeriesCreateRequest = z.infer<typeof eventSeriesCreateSchema>;
 export type SeriesUpdateRequest = z.infer<typeof seriesUpdateSchema>;
 export type InstanceUpdateRequest = z.infer<typeof instanceUpdateSchema>;
 export type RsvpRequest = z.infer<typeof rsvpSchema>;
-export type ProfileUpdateRequest = z.infer<typeof profileUpdateSchema>;

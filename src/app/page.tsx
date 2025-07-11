@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
-import { displayName } from "@/lib/server/profile";
 import { seriesSchedules } from "@/lib/server/feed";
 import { SeriesEvents } from "./components/EventGrid";
 import { SideNav } from "./components/SideNav";
@@ -9,8 +7,6 @@ import { SiteHeader } from "./components/SiteHeader";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const user = await getCurrentUser();
-
   const schedules = await seriesSchedules();
 
   return (
@@ -18,9 +14,7 @@ export default async function Home() {
       <SiteHeader />
       <SideNav />
       <main>
-        <h1 className="welcome-heading">
-          {user ? `Welcome Back ${displayName(user)}` : "Find something to go to"}
-        </h1>
+        <h1 className="welcome-heading">Find something to go to</h1>
 
         {schedules.length ? (
           schedules.map((section) => (
@@ -35,16 +29,7 @@ export default async function Home() {
             />
           ))
         ) : (
-          <p className="event-empty">
-            No public events yet. <Link href="/events/new">Create the first one</Link>.
-          </p>
-        )}
-
-        {user ? null : (
-          <p className="event-empty">
-            <Link href="/login">Sign in</Link> to RSVP, host your own events, and keep track of what you
-            have been to.
-          </p>
+          <p className="event-empty">No events scheduled yet.</p>
         )}
       </main>
     </>
