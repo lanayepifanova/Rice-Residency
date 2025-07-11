@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { claimInvites } from "@/lib/server/series";
 import { hashPassword, verifyPassword, MIN_PASSWORD_LENGTH } from "@/lib/server/password";
 import { createSession, destroySession } from "@/lib/server/session";
+import { signupsOpen } from "@/lib/signups";
 
 const emailSchema = z.string().trim().toLowerCase().email();
 const passwordSchema = z.string().min(MIN_PASSWORD_LENGTH).max(200);
@@ -67,6 +68,14 @@ export async function signIn(formData: FormData): Promise<void> {
 
 export async function signUp(formData: FormData): Promise<void> {
   const next = safeNextPath(formData.get("next"));
+
+  // Checked here and not only in the page that renders the form. Hiding the
+  // link would still leave this Server Action reachable by anyone who posts to
+  // its id, and a closed sign-up that can be reopened with curl is not closed.
+  if (!signupsOpen()) {
+    backToLogin("signin", "signups-closed", next);
+  }
+
   const email = emailSchema.safeParse(formData.get("email"));
   const password = passwordSchema.safeParse(formData.get("password"));
 

@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
+    "postinstall": "prisma generate",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -14,7 +15,12 @@
     "db:seed": "prisma db seed",
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "db:seed:games": "tsx prisma/seed-games.ts",
-    "db:seed:people": "tsx prisma/seed-people.ts"
+    "db:seed:people": "tsx prisma/seed-people.ts",
+    "db:push-live": "tsx scripts/push-live.ts",
+    "db:set-password": "tsx scripts/set-password.ts"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

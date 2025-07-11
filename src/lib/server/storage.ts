@@ -16,6 +16,21 @@ export class UploadError extends Error {}
  */
 const AVATAR_ROOT = path.join(process.cwd(), "public", "uploads", "avatars");
 
+/**
+ * Whether this process can write to `public/uploads` at all.
+ *
+ * On Vercel the deployment filesystem is read-only, and the one writable
+ * directory is wiped between invocations — so an upload there would either
+ * throw EROFS or, worse, appear to succeed and leave a profile pointing at a
+ * photo that no longer exists. Both are caught here so the profile form can say
+ * something true instead of returning a 500. Every photo already in the
+ * directory is a committed file under `public/people`, so the deployed site
+ * still shows faces; it just cannot take new ones.
+ */
+function uploadsAreWritable(): boolean {
+  return !process.env.VERCEL;
+}
+
 /** The URL prefix that `AVATAR_ROOT` is served under. */
 const AVATAR_URL_BASE = "/uploads/avatars";
 
@@ -54,6 +69,12 @@ function safeUserDir(userId: string): string {
  * showing the old image.
  */
 export async function uploadAvatar(userId: string, file: File): Promise<string> {
+  if (!uploadsAreWritable()) {
+    throw new UploadError(
+      "Profile photos can only be changed on the machine that hosts the app. Everything else on this form still saves.",
+    );
+  }
+
   if (file.size === 0) {
     throw new UploadError("That file is empty.");
   }
@@ -83,6 +104,13 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
 
 /** Removes every stored avatar for a user, used when they clear their photo. */
 export async function removeAvatars(userId: string): Promise<void> {
+  // Nothing was ever written here, so there is nothing to delete. Returning
+  // quietly keeps "clear my photo" working on the deployed site: the column is
+  // still cleared, which is the part the visitor asked for.
+  if (!uploadsAreWritable()) {
+    return;
+  }
+
   const dir = safeUserDir(userId);
 
   // Missing directory is the normal case for someone who never uploaded one.

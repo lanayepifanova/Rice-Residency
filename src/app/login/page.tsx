@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { MIN_PASSWORD_LENGTH } from "@/lib/server/password";
+import { signupsOpen } from "@/lib/signups";
 import { signIn, signUp } from "./actions";
 
 type LoginSearchParams = {
@@ -14,6 +16,7 @@ const errorMessages: Record<string, string> = {
   "invalid-email": "That does not look like a valid email address.",
   "weak-password": `Passwords must be at least ${MIN_PASSWORD_LENGTH} characters.`,
   "email-taken": "There is already an account with that email. Sign in instead.",
+  "signups-closed": "New accounts are not open. Ask someone in the house to make you one.",
 };
 
 export default async function LoginPage({
@@ -23,7 +26,10 @@ export default async function LoginPage({
 }) {
   const { error, next, mode } = await searchParams;
   const returnTo = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
-  const isSignUp = mode === "signup";
+  const canSignUp = signupsOpen();
+  // `?mode=signup` is ignored when sign-up is closed, so a stale link shows the
+  // sign-in form rather than a form that cannot succeed.
+  const isSignUp = canSignUp && mode === "signup";
 
   // Already signed in — no reason to show the form.
   if (await getCurrentUser()) {
@@ -80,9 +86,14 @@ export default async function LoginPage({
                 At least {MIN_PASSWORD_LENGTH} characters. Already have an account?{" "}
                 <a href={otherMode}>Sign in</a>.
               </>
-            ) : (
+            ) : canSignUp ? (
               <>
                 New here? <a href={otherMode}>Create an account</a>.
+              </>
+            ) : (
+              <>
+                Everything here is public to read — <Link href="/">the calendar</Link> and the
+                directory need no account. Signing in is for the house.
               </>
             )}
           </p>

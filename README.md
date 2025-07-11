@@ -49,7 +49,25 @@ profile photos, and neither is cleared by refreshing the page or restarting the
 dev server. To see what is stored, open `psql rice_residency`.
 
 Seeded accounts sign in with the password `residency` — `lana@example.com` is
-the organizer of all three events.
+the organizer of all three events. That password is fine while the app only
+answers to localhost; [DEPLOY.md](DEPLOY.md) says what to do about it before the
+app has a public URL.
+
+## Deploying
+
+The house data lives in Postgres on one laptop, and a server in a datacenter
+cannot reach a laptop — so the deployed site reads a hosted copy of the database
+that this machine pushes to:
+
+```bash
+npm run db:push-live   # dump the local database, load it into the live one
+```
+
+[DEPLOY.md](DEPLOY.md) has the whole path: Vercel, the database, what to change
+before sharing the link, and what visitors can do once they have it. The short
+version is that the live site is public to read and closed to sign up — anyone
+can browse the calendar and the directory, nobody can mint themselves an
+account.
 
 ## Quality checks
 
@@ -79,9 +97,10 @@ cleans up after itself, but point it at a development database.
 hash (`src/lib/server/password.ts`); a session is a random token in an httpOnly
 cookie whose SHA-256 is a row in `Session` (`src/lib/server/session.ts`), so
 signing out revokes access rather than trusting the browser to forget. There is
-no email sender, which means no password reset — resetting one is a `psql`
-update away. Putting this app on the public internet would need that gap closed
-first.
+no email sender, which means no password reset — `npm run db:set-password` is
+how one gets reset. Sign-up is open in development and closed in production
+(`src/lib/signups.ts`), which is what makes a public deployment safe to hand out
+without a password reset flow: strangers read, they do not register.
 
 Two more rules are worth knowing before changing anything:
 
@@ -96,6 +115,7 @@ reintroduces overselling under concurrent RSVPs.
 
 ## Docs
 
+- [Deploying](DEPLOY.md) — putting this on the internet for the house to read
 - [Product plan](docs/recurring-events-release-plan.md)
 - [Release runbook](docs/release-runbook.md) — migrations, rollback, monitoring
 - [Changelog](CHANGELOG.md)
