@@ -11,6 +11,8 @@ export type Person = {
   name: string;
   /** Lives here, or comes to cowork. The house draws this line, so the app does. */
   membership: "resident" | "attendee";
+  /** Runs the house. Always a resident too, so this narrows rather than replaces. */
+  lead: boolean;
   username: string | null;
   href: string | null;
   avatarUrl: string | null;
@@ -32,6 +34,7 @@ function toPerson(user: User): Person {
     id: user.id,
     name: displayName(user),
     membership: user.membership,
+    lead: user.houseLead,
     username: user.username,
     // A profile is addressed by handle, so someone who has not set one yet is
     // listed but has no page to link to.

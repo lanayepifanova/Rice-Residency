@@ -21,7 +21,10 @@ export default async function ExplorePage({ searchParams }: PageProps<"/explore"
   const query = readQuery(params.q);
   const people = await listPeople(query);
   const building = people.filter((person) => person.project);
-  const residents = people.filter((person) => person.membership === "resident");
+  const leads = people.filter((person) => person.lead);
+  // Leads are residents too, but listing them twice would read as two different
+  // people, so the residents list is everyone else who lives here.
+  const residents = people.filter((person) => person.membership === "resident" && !person.lead);
   const attendees = people.filter((person) => person.membership === "attendee");
 
   return (
@@ -58,8 +61,24 @@ export default async function ExplorePage({ searchParams }: PageProps<"/explore"
           </p>
         ) : null}
 
-        {/* Two lists, because the house has two kinds of people and conflating
-            them loses the distinction that matters: who lives here. */}
+        {/* Three lists, because the house draws these lines and conflating them
+            loses the distinctions that matter: who runs it, and who lives in
+            it. Leads come first — they are who you ask. */}
+        <section className="event-section">
+          <div className="event-section-head">
+            <h2>House Leaders</h2>
+            <span className="event-section-note">
+              {leads.length} {leads.length === 1 ? "person" : "people"}
+            </span>
+          </div>
+          <PeopleGrid
+            people={leads}
+            empty={
+              query ? <>No house leader matches “{query}”.</> : <>No house leaders listed yet.</>
+            }
+          />
+        </section>
+
         <section className="event-section">
           <div className="event-section-head">
             <h2>Residents</h2>

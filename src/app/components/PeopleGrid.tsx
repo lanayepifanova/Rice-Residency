@@ -2,6 +2,15 @@
 
 import type { Person } from "@/lib/server/people";
 
+/** What the house can say about someone who has filled nothing in themselves. */
+function standing(person: Person): string {
+  if (person.lead) {
+    return "House Leader";
+  }
+
+  return person.membership === "resident" ? "House Resident" : "Community Member";
+}
+
 /**
  * People are laid out exactly like events: a square you can scan, a caption bar
  * with the two things worth reading at a glance — who they are, and what they
@@ -22,16 +31,10 @@ function PersonSquare({ person }: { person: Person }) {
 
       <span className="event-square-text">
         <h3>{person.name}</h3>
-        {/* What they are building, else where they are in school, else the only
-            thing the house actually knows about them. "At the house" would be a
-            plain untruth on someone who does not live here, so they are named
-            for the thing that is true: they are part of the community. */}
-        <p>
-          {person.project
-            ? person.project.name
-            : (person.study ??
-              (person.membership === "resident" ? "At the house" : "Community Member"))}
-        </p>
+        {/* What they are building, else where they are in school, else what the
+            house knows about them: whether they run it, live in it, or are one
+            of the people around it. */}
+        <p>{person.project ? person.project.name : (person.study ?? standing(person))}</p>
       </span>
     </>
   );

@@ -17,15 +17,17 @@ export type Person = {
   email?: string;
   /** Overrides the handle derived from the name. */
   username?: string;
+  /** Runs the house. Residents only — set on the two people who do. */
+  lead?: true;
 };
 
 /** Lives at Rice Residency. */
 export const residents: Person[] = [
-  { name: "Lana Yepifanova", username: "lana", email: "lana@example.com" },
+  { name: "Lana Yepifanova", username: "lana", email: "lana@example.com", lead: true },
   { name: "Halbert Kim" },
   { name: "Jun Lee" },
   { name: "Adam Towner" },
-  { name: "Catherine Zhou" },
+  { name: "Catherine Zhou", lead: true },
   { name: "Gavin Firestone" },
   { name: "Howard Zhao" },
   { name: "Jocelyn Lass" },

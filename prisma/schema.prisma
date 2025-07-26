@@ -96,6 +96,11 @@ model User {
   /// from one to the other.
   membership HouseMembership @default(attendee)
 
+  /// Runs the house. A flag rather than a third membership value, because a
+  /// lead is a resident too — the directory should not have to choose between
+  /// saying they live here and saying they run the place.
+  houseLead Boolean @default(false)
+
   riceYear String?
   major    String?
 

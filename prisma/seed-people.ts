@@ -38,6 +38,7 @@ async function upsertPerson(person: Person, membership: "resident" | "attendee")
       data: {
         name: person.name,
         membership,
+        houseLead: person.lead ?? false,
         ...(person.email ? { email: person.email } : {}),
       },
     });
@@ -50,6 +51,7 @@ async function upsertPerson(person: Person, membership: "resident" | "attendee")
       name: person.name,
       username,
       membership,
+      houseLead: person.lead ?? false,
       // Null rather than a placeholder: this person has no account yet.
       email: person.email ?? null,
     },
@@ -66,6 +68,15 @@ async function main() {
     throw new Error(
       `These people are in both lists, so it is ambiguous which they are: ${clashes.join(", ")}. ` +
         "A resident who also coworks belongs in the residents list only.",
+    );
+  }
+
+  const misplacedLeads = attendees.filter((person) => person.lead).map((person) => person.name);
+
+  if (misplacedLeads.length) {
+    throw new Error(
+      `These people are marked as house leads but are not residents: ${misplacedLeads.join(", ")}. ` +
+        "A lead lives at the house, so they belong in the residents list.",
     );
   }
 
