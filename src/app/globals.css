@@ -1159,13 +1159,6 @@ img.profile-image {
   }
 }
 
-.games-intro {
-  max-width: 60ch;
-  margin: 8px 0 0;
-  color: #666666;
-  font-size: 14px;
-}
-
 /* Standings tables on /games. The app had no table styling before this, so
    these follow the same rules as everything else: one black hairline, uppercase
    micro-labels, numbers in the monospace face so columns line up. */
@@ -1234,5 +1227,145 @@ img.profile-image {
 
   .standings-number {
     width: 52px;
+  }
+}
+
+/* The night-by-night log on /games/dashboard. Same hairlines and monospace
+   figures as the standings above, one card per sitting. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.stat {
+  padding: 12px;
+  border: 1px solid #000000;
+}
+
+.stat-label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666666;
+}
+
+.stat-value {
+  display: block;
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 26px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #666666;
+}
+
+.night-list {
+  display: grid;
+  gap: 16px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.night {
+  padding: 16px;
+  border: 1px solid #000000;
+}
+
+.night-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.night-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.night-meta {
+  color: #666666;
+  font-size: 13px;
+}
+
+.night-note {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.night-scores {
+  display: grid;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.night-score {
+  display: grid;
+  /* Avatar, name over bar, then the count — so every row's number lines up
+     down the right edge however long the names are. */
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.night-score .profile-image {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+
+.night-score-body {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.night-score-name {
+  font-size: 14px;
+}
+
+.night-bar {
+  display: block;
+  height: 6px;
+  background: #eeeeee;
+}
+
+.night-bar-fill {
+  display: block;
+  height: 100%;
+  background: #000000;
+}
+
+.night-score-points {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.night-score-of {
+  color: #666666;
+}
+
+@media (max-width: 600px) {
+  .night {
+    padding: 12px;
+  }
+
+  .stat-value {
+    font-size: 22px;
   }
 }

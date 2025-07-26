@@ -108,10 +108,8 @@ export default async function GamesPage() {
       <main>
         <h1 className="welcome-heading">R Squared Points</h1>
 
-        <p className="games-intro">
-          A point for every round won. A round shared — a tie, or a team win — is a point each.
-          Share is the portion of all rounds of that game a player has taken; only winners are
-          written down, so there is no won-lost record to show.
+        <p className="breadcrumb">
+          <Link href="/games/dashboard">Every night played →</Link>
         </p>
 
         {games.length ? (

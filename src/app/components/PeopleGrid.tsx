@@ -24,12 +24,13 @@ function PersonSquare({ person }: { person: Person }) {
         <h3>{person.name}</h3>
         {/* What they are building, else where they are in school, else the only
             thing the house actually knows about them. "At the house" would be a
-            plain untruth on a coworking regular who does not live here. */}
+            plain untruth on someone who does not live here, so they are named
+            for the thing that is true: they are part of the community. */}
         <p>
           {person.project
             ? person.project.name
             : (person.study ??
-              (person.membership === "resident" ? "At the house" : "Comes to cowork"))}
+              (person.membership === "resident" ? "At the house" : "Community Member"))}
         </p>
       </span>
     </>
