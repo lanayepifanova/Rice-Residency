@@ -21,7 +21,7 @@ export default async function ProfileSettingsPage() {
         <section className="profile-photo-section">
           <ProfileForm
             values={{
-              email: user.email,
+              email: user.email ?? "",
               name: user.name ?? "",
               username: user.username ?? "",
               bio: user.bio ?? "",

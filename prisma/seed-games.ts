@@ -71,20 +71,19 @@ async function main() {
   const playerIds = new Map<string, string>();
 
   for (const player of players) {
-    // A player is linked to an account only if that username exists. The tally
-    // must import on a machine whose directory is empty, so a missing user is
-    // not an error — the player simply has no profile to link to.
-    const user = player.user
-      ? await prisma.user.findFirst({ where: { username: player.user } })
-      : null;
+    const user = await prisma.user.findUnique({ where: { username: player.username } });
 
-    const row = await prisma.gamePlayer.upsert({
-      where: { slug: player.slug },
-      create: { slug: player.slug, name: player.name, userId: user?.id ?? null },
-      update: { name: player.name, userId: user?.id ?? null },
-    });
+    // Every player is someone in the directory, so a missing handle means the
+    // two files disagree. Failing here is better than silently dropping
+    // somebody's points.
+    if (!user) {
+      throw new Error(
+        `"${player.slug}" maps to @${player.username}, who is not in the directory. ` +
+          "Run `npm run db:seed:people` first, or fix the handle in games-data.ts.",
+      );
+    }
 
-    playerIds.set(player.slug, row.id);
+    playerIds.set(player.slug, user.id);
   }
 
   const keptSessionIds: string[] = [];
@@ -120,7 +119,7 @@ async function main() {
     await prisma.gameSessionScore.createMany({
       data: [...tally].map(([slug, points]) => ({
         sessionId: session.id,
-        playerId: playerIds.get(slug)!,
+        userId: playerIds.get(slug)!,
         points,
       })),
     });

@@ -13,7 +13,8 @@
     "prisma:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "test:integration": "vitest run --config vitest.integration.config.mts",
-    "db:seed:games": "tsx prisma/seed-games.ts"
+    "db:seed:games": "tsx prisma/seed-games.ts",
+    "db:seed:people": "tsx prisma/seed-people.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",

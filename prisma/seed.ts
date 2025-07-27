@@ -53,8 +53,9 @@ type SeedUser = {
 };
 
 /**
- * The house directory. Everyone carries a project, because the people page is
- * only useful if there is something to find people by.
+ * Only the organizer. The house directory is real people now and lives in
+ * `people-data.ts`, imported by `npm run db:seed:people` — this seed keeps just
+ * the account that hosts the events, so the two never fight over the same rows.
  */
 const users: SeedUser[] = [
   {
@@ -69,100 +70,6 @@ const users: SeedUser[] = [
     projectSummary: "The house itself: coworking, parties, and dinners for people building things.",
     pastProjects: "Two seasons of the residency, a campus events newsletter, a tiny RSVP bot that predates this app.",
     helpNeeded: "Sponsors for the dinner series, and anyone who has run a members directory before.",
-  },
-  {
-    key: "maya",
-    email: "maya@example.com",
-    name: "Maya Chen",
-    username: "maya",
-    bio: "Design engineer, ex-hardware.",
-    riceYear: "Junior",
-    major: "Electrical Engineering",
-    projectName: "Loom Charts",
-    projectSummary: "Charting library for people who do not want to learn a charting library.",
-    projectUrl: "https://example.com/loom-charts",
-    pastProjects: "A haptics glove for the hardware club, two semesters of teaching intro circuits.",
-    helpNeeded: "Someone opinionated about API design before I lock the chart config.",
-  },
-  {
-    key: "theo",
-    email: "theo@example.com",
-    name: "Theo Ramirez",
-    username: "theo",
-    bio: "Writes compilers for fun, backends for money.",
-    riceYear: "PhD 2",
-    major: "Computer Science",
-    projectName: "Ferry",
-    projectSummary: "Moves data between Postgres and everything else without a config file.",
-    pastProjects: "A toy language with a working type checker, a query planner for a class project.",
-    helpNeeded: "Testers with a messy Postgres schema who want it moved somewhere else.",
-  },
-  {
-    key: "nina",
-    email: "nina@example.com",
-    name: "Nina Patel",
-    username: "nina",
-    bio: "Biotech research, second year.",
-    riceYear: "Sophomore",
-    major: "Biosciences",
-    projectName: "Assay Notebook",
-    projectSummary: "Lab notebook that keeps protocols and results in the same place.",
-    pastProjects: "A lab inventory tracker used by two research groups, a poster on assay reproducibility.",
-    helpNeeded: "A front-end person who has strong feelings about forms.",
-  },
-  {
-    key: "amara",
-    email: "amara@example.com",
-    name: "Amara Lewis",
-    username: "amara",
-    bio: "Photographer. Shoots most of the house's events.",
-    riceYear: "Senior",
-    major: "Visual and Dramatic Arts",
-    projectName: "Field Notes",
-    projectSummary: "A photo essay about the people passing through Houston this year.",
-    pastProjects: "Two gallery shows, the residency's event photography since the first party.",
-    helpNeeded: "A venue for a show in the spring, and help sequencing about eighty photographs.",
-  },
-  {
-    key: "sofia",
-    email: "sofia@example.com",
-    name: "Sofia Marin",
-    username: "sofia",
-    bio: "Teaches, builds, ships on Fridays.",
-    riceYear: "Alum '25",
-    major: "Mathematics",
-    projectName: "Tempo",
-    projectSummary: "Scheduling for tutors who hate scheduling.",
-    projectUrl: "https://example.com/tempo",
-    pastProjects: "A tutoring collective with sixty students, a scheduling spreadsheet that got out of hand.",
-    helpNeeded: "Advice on pricing, and someone who has taken a side project to a real business.",
-  },
-  {
-    key: "julian",
-    email: "julian@example.com",
-    name: "Julian Brooks",
-    username: "julian",
-    bio: "Cooking, mostly. Occasionally code.",
-    riceYear: "Junior",
-    major: "Economics",
-    projectName: "Long Table",
-    projectSummary: "A supper club that pairs first-time hosts with people who can cook.",
-    pastProjects: "Six supper clubs, a pop-up at the farmers market, a zine of the recipes.",
-    helpNeeded: "A commercial kitchen for one Saturday a month.",
-  },
-  {
-    key: "kai",
-    email: "kai@example.com",
-    name: "Kai Nakamura",
-    username: "kai",
-    bio: "Maps, transit, and city data.",
-    riceYear: "Senior",
-    major: "Statistics",
-    projectName: "Transit Atlas",
-    projectSummary: "Open maps of how people actually move through Houston.",
-    projectUrl: "https://example.com/transit-atlas",
-    pastProjects: "An open dataset of Houston bus timings, a map of every bike rack on campus.",
-    helpNeeded: "People who ride the 82 and will answer questions about it.",
   },
 ];
 
@@ -287,12 +194,14 @@ async function main() {
         id: existing?.id ?? randomUUID(),
         email: user.email,
         passwordHash,
+        membership: "resident",
         name: user.name,
         username: user.username,
         ...profileFields(user),
       },
       update: {
         passwordHash,
+        membership: "resident",
         name: user.name,
         username: user.username,
         ...profileFields(user),
@@ -455,28 +364,20 @@ async function seedRsvps(userIds: Map<string, string>, seriesIds: Map<string, st
   if (coworking) {
     // Capacity is 6: Maya brings a guest (2 seats), then Nina, Sofia, Julian,
     // and Theo take the rest. Amara and Kai land on the waitlist in order.
-    await rsvp(coworking.id, userIds.get("maya")!, "going", 1, 2, null);
-    await rsvp(coworking.id, userIds.get("nina")!, "going", 0, 1, null);
-    await rsvp(coworking.id, userIds.get("sofia")!, "going", 0, 1, null);
-    await rsvp(coworking.id, userIds.get("julian")!, "going", 0, 1, null);
-    await rsvp(coworking.id, userIds.get("theo")!, "going", 0, 1, null);
-    await rsvp(coworking.id, userIds.get("amara")!, "waitlisted", 0, 1, 1);
-    await rsvp(coworking.id, userIds.get("kai")!, "waitlisted", 1, 2, 2);
+    // Only the organizer. The demo RSVPs came from invented people who are no
+    // longer in the directory, so capacity and waitlist states now come from
+    // real ones as they arrive rather than from fiction.
+    await rsvp(coworking.id, userIds.get("lana")!, "going", 0, 1, null);
   }
 
   // Past attendance, so "Events you attended" is not empty on a fresh database.
   if (pastCoworking) {
     await rsvp(pastCoworking.id, userIds.get("lana")!, "going", 0, 1, null);
-    await rsvp(pastCoworking.id, userIds.get("nina")!, "going", 0, 1, null);
   }
 
   if (pastParty) {
     // The party is history now, so its RSVPs cover going, maybe, and busy.
     await rsvp(pastParty.id, userIds.get("lana")!, "going", 1, 2, null);
-    await rsvp(pastParty.id, userIds.get("amara")!, "going", 0, 1, null);
-    await rsvp(pastParty.id, userIds.get("maya")!, "going", 2, 3, null);
-    await rsvp(pastParty.id, userIds.get("sofia")!, "maybe", 0, 0, null);
-    await rsvp(pastParty.id, userIds.get("julian")!, "busy", 0, 0, null);
   }
 
   console.log("  RSVPs across going, maybe, busy, and waitlisted");

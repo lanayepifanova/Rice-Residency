@@ -1,7 +1,11 @@
 import { prisma } from "@/lib/db";
+import { avatarInitial, displayName } from "./profile";
 
 /**
  * R Squared Points — the house card-game standings.
+ *
+ * Players are people in the directory, so a name here is the same person as on
+ * the people page and their row links to that profile.
  *
  * What is recorded is the winner of each round, so a player's total is points,
  * not a win/loss record. Nobody writes down who else was at the table, which
@@ -11,7 +15,7 @@ import { prisma } from "@/lib/db";
  */
 
 export type Standing = {
-  playerId: string;
+  userId: string;
   name: string;
   /** Their profile, when the player has a house account. */
   href: string | null;
@@ -42,7 +46,7 @@ export async function listGameStandings(): Promise<GameStandings[]> {
     include: {
       sessions: {
         orderBy: [{ playedOn: "asc" }, { ordinal: "asc" }],
-        include: { scores: { include: { player: { include: { user: true } } } } },
+        include: { scores: { include: { user: true } } },
       },
     },
   });
@@ -54,7 +58,7 @@ export async function listGameStandings(): Promise<GameStandings[]> {
 
     for (const session of game.sessions) {
       for (const score of session.scores) {
-        const existing = totals.get(score.playerId);
+        const existing = totals.get(score.userId);
 
         if (existing) {
           existing.points += score.points;
@@ -62,11 +66,11 @@ export async function listGameStandings(): Promise<GameStandings[]> {
           continue;
         }
 
-        totals.set(score.playerId, {
-          playerId: score.playerId,
-          name: score.player.name,
-          href: score.player.user?.username ? `/people/${score.player.user.username}` : null,
-          initial: score.player.name.charAt(0).toUpperCase(),
+        totals.set(score.userId, {
+          userId: score.userId,
+          name: displayName(score.user),
+          href: score.user.username ? `/people/${score.user.username}` : null,
+          initial: avatarInitial(score.user),
           points: score.points,
           nights: 1,
           share: 0,
@@ -101,18 +105,14 @@ export async function listGameStandings(): Promise<GameStandings[]> {
 export async function personGamePoints(
   userId: string,
 ): Promise<Array<{ game: string; slug: string; points: number }>> {
-  const player = await prisma.gamePlayer.findUnique({
+  const scores = await prisma.gameSessionScore.findMany({
     where: { userId },
-    include: { scores: { include: { session: { include: { game: true } } } } },
+    include: { session: { include: { game: true } } },
   });
-
-  if (!player) {
-    return [];
-  }
 
   const byGame = new Map<string, { game: string; slug: string; points: number }>();
 
-  for (const score of player.scores) {
+  for (const score of scores) {
     const game = score.session.game;
     const entry = byGame.get(game.id);
 

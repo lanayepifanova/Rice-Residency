@@ -9,6 +9,8 @@ import { avatarInitial, displayName } from "./profile";
 export type Person = {
   id: string;
   name: string;
+  /** Lives here, or comes to cowork. The house draws this line, so the app does. */
+  membership: "resident" | "attendee";
   username: string | null;
   href: string | null;
   avatarUrl: string | null;
@@ -29,6 +31,7 @@ function toPerson(user: User): Person {
   return {
     id: user.id,
     name: displayName(user),
+    membership: user.membership,
     username: user.username,
     // A profile is addressed by handle, so someone who has not set one yet is
     // listed but has no page to link to.
@@ -53,6 +56,9 @@ function toPerson(user: User): Person {
  * The directory, optionally narrowed by a search. The search covers names,
  * handles, and projects together, because "who was the person working on the
  * mapping thing" is one question, not three.
+ *
+ * Residents and attendees come back in one list. Splitting them is the calling
+ * page's job, so a search can still say how many of each it matched.
  */
 export async function listPeople(query?: string): Promise<Person[]> {
   const term = query?.trim();

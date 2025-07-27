@@ -22,7 +22,15 @@ function PersonSquare({ person }: { person: Person }) {
 
       <span className="event-square-text">
         <h3>{person.name}</h3>
-        <p>{person.project ? person.project.name : (person.study ?? "At the house")}</p>
+        {/* What they are building, else where they are in school, else the only
+            thing the house actually knows about them. "At the house" would be a
+            plain untruth on a coworking regular who does not live here. */}
+        <p>
+          {person.project
+            ? person.project.name
+            : (person.study ??
+              (person.membership === "resident" ? "At the house" : "Comes to cowork"))}
+        </p>
       </span>
     </>
   );

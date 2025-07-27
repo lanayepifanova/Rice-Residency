@@ -22,6 +22,13 @@ enum EventVisibility {
   public
 }
 
+enum HouseMembership {
+  /// Lives at Rice Residency.
+  resident
+  /// Comes to coworking sessions and events without living here.
+  attendee
+}
+
 enum RsvpStatus {
   going
   maybe
@@ -61,8 +68,11 @@ model User {
   /// This app owns identity outright: there is no external auth provider, so
   /// the id is minted here when the account is created.
   id        String   @id @default(uuid())
-  /// Always present — sign-in is keyed on email.
-  email     String   @unique
+  /// Null for most of the directory. The house knows far more people than have
+  /// accounts, and a resident or a coworking regular is a real entry here long
+  /// before they ever sign in. Sign-in is keyed on this, so a row without one
+  /// simply has no way to log in yet.
+  email     String?  @unique
   /// scrypt hash of the account password, in the format written by
   /// `src/lib/server/password.ts`. Nullable because a person can exist before
   /// they have credentials: seeded rows and invited emails both start here.
@@ -80,6 +90,12 @@ model User {
 
   /// Where someone is in school. Free text rather than an enum: "Junior",
   /// "PhD 3", and "Alum '24" are all answers people actually give.
+  /// Whether this person lives in the house or just turns up to cowork. The
+  /// two lists are kept in one table because everything else about a person —
+  /// profile, RSVPs, game results — is identical either way, and people move
+  /// from one to the other.
+  membership HouseMembership @default(attendee)
+
   riceYear String?
   major    String?
 
@@ -110,7 +126,7 @@ model User {
   invitesAccepted        EventInvite[]           @relation("InviteRecipient")
   shareLinksCreated      EventShareLink[]
   sessions               Session[]
-  gamePlayer             GamePlayer?
+  gameScores             GameSessionScore[]
 }
 
 /// A signed-in browser.
@@ -346,25 +362,6 @@ model CardGame {
   sessions GameSession[]
 }
 
-/// Someone who plays. Deliberately not the same thing as a `User`.
-///
-/// Most people at the table have no account — the tally predates anyone signing
-/// up, and turning every player into a `User` would list them in the house
-/// directory as a resident with a blank profile. `userId` links the ones who do
-/// have accounts, so their name in the standings reaches their profile.
-model GamePlayer {
-  id     String  @id @default(cuid())
-  name   String
-  slug   String  @unique
-  userId String? @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user   User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
-  scores GameSessionScore[]
-}
-
 /// One sitting: a date, a game, and the number of rounds played.
 ///
 /// Scores are stored per sitting rather than as a running total per person,
@@ -400,14 +397,14 @@ model GameSession {
 model GameSessionScore {
   id        String @id @default(cuid())
   sessionId String
-  playerId  String
+  userId    String
   /// Rounds won that night. A round shared by two players — a tie, or a team
   /// win — counts one point each, which is how the house scores it.
   points Int @default(0)
 
   session GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  player  GamePlayer  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([sessionId, playerId])
-  @@index([playerId])
+  @@unique([sessionId, userId])
+  @@index([userId])
 }

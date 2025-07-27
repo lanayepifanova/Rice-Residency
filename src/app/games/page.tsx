@@ -66,7 +66,7 @@ function GameTable({ game }: { game: GameStandings }) {
           </thead>
           <tbody>
             {game.standings.map((standing, index) => (
-              <tr key={standing.playerId}>
+              <tr key={standing.userId}>
                 <td className="standings-rank">{index + 1}</td>
                 <td>
                   <span className="standings-player">

@@ -79,7 +79,9 @@ function emptyToNull(value: string | undefined): string | null {
 }
 
 export function displayName(user: Pick<User, "name" | "username" | "email">): string {
-  return user.name ?? user.username ?? user.email.split("@")[0];
+  // Most of the directory has a name and nothing else — the email fallback is
+  // for accounts created by signing up, which start with only an address.
+  return user.name ?? user.username ?? user.email?.split("@")[0] ?? "Someone";
 }
 
 export function avatarInitial(user: Pick<User, "name" | "username" | "email">): string {

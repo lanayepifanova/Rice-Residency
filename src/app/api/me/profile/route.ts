@@ -63,7 +63,7 @@ function text(value: FormDataEntryValue | null): string {
 
 function publicProfile(user: {
   id: string;
-  email: string;
+  email: string | null;
   name: string | null;
   username: string | null;
   avatarUrl: string | null;

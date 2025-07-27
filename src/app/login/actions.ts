@@ -60,7 +60,9 @@ export async function signIn(formData: FormData): Promise<void> {
     backToLogin("signin", "invalid-credentials", next);
   }
 
-  await completeSignIn(user.id, user.email, next);
+  // email.data, not user.email: the column is nullable now, and this is the
+  // address the account was just found by, so it is the same value typed.
+  await completeSignIn(user.id, email.data, next);
 }
 
 export async function signUp(formData: FormData): Promise<void> {
@@ -92,7 +94,7 @@ export async function signUp(formData: FormData): Promise<void> {
     ? await prisma.user.update({ where: { id: existing.id }, data: { passwordHash } })
     : await prisma.user.create({ data: { email: email.data, passwordHash } });
 
-  await completeSignIn(user.id, user.email, next);
+  await completeSignIn(user.id, email.data, next);
 }
 
 export async function signOut(): Promise<void> {

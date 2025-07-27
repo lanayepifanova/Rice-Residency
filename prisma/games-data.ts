@@ -51,18 +51,22 @@ export const games = [
 ];
 
 /**
- * People who have scored. `user` links a player to a house account by username,
- * which is what makes their name in the standings a link to their profile.
- * Everyone else is a player and nothing more — they do not become residents in
- * the directory just by winning at cards.
+ * Who the first names in the rounds above refer to.
+ *
+ * Every player is a person in the house directory, keyed by their handle. The
+ * results are written down using the names people are called at the table, so
+ * this is where "Manny" is resolved to Manuel Ponce — the standings then show
+ * whatever the directory calls them.
+ *
+ * All six are residents.
  */
 export const players = [
-  { slug: "lana", name: "Lana", user: "lana" },
-  { slug: "chris", name: "Chris" },
-  { slug: "manny", name: "Manny" },
-  { slug: "jun", name: "Jun" },
-  { slug: "gavin", name: "Gavin" },
-  { slug: "nolan", name: "Nolan" },
+  { slug: "lana", username: "lana" },
+  { slug: "chris", username: "chris-tang" },
+  { slug: "manny", username: "manuel-ponce" },
+  { slug: "jun", username: "jun-lee" },
+  { slug: "gavin", username: "gavin-firestone" },
+  { slug: "nolan", username: "nolan-connolly" },
 ];
 
 export const sittings: Sitting[] = [

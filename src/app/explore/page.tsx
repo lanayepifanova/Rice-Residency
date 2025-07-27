@@ -13,13 +13,16 @@ function readQuery(value: string | string[] | undefined): string {
 
 /**
  * Explore is people, not events — the events are on the home page. This is the
- * house directory: who is around, and what they are working on.
+ * house directory: who lives here, who comes to cowork, and what they are all
+ * working on.
  */
 export default async function ExplorePage({ searchParams }: PageProps<"/explore">) {
   const params = await searchParams;
   const query = readQuery(params.q);
   const people = await listPeople(query);
   const building = people.filter((person) => person.project);
+  const residents = people.filter((person) => person.membership === "resident");
+  const attendees = people.filter((person) => person.membership === "attendee");
 
   return (
     <>
@@ -55,21 +58,54 @@ export default async function ExplorePage({ searchParams }: PageProps<"/explore"
           </p>
         ) : null}
 
-        <PeopleGrid
-          people={people}
-          empty={
-            query ? (
-              <>
-                Nobody matches “{query}”. <Link href="/explore">See everyone</Link>.
-              </>
-            ) : (
-              <>
-                Nobody has a profile yet. <Link href="/settings/profile">Set yours up</Link> and you
-                appear here.
-              </>
-            )
-          }
-        />
+        {/* Two lists, because the house has two kinds of people and conflating
+            them loses the distinction that matters: who lives here. */}
+        <section className="event-section">
+          <div className="event-section-head">
+            <h2>Residents</h2>
+            <span className="event-section-note">
+              {residents.length} {residents.length === 1 ? "person" : "people"}
+            </span>
+          </div>
+          <PeopleGrid
+            people={residents}
+            empty={
+              query ? (
+                <>No resident matches “{query}”.</>
+              ) : (
+                <>
+                  No residents listed yet. <Link href="/settings/profile">Set up your profile</Link>{" "}
+                  and you appear here.
+                </>
+              )
+            }
+          />
+        </section>
+
+        <section className="event-section">
+          <div className="event-section-head">
+            <h2>Coworking</h2>
+            <span className="event-section-note">
+              {attendees.length} {attendees.length === 1 ? "person" : "people"}
+            </span>
+          </div>
+          <PeopleGrid
+            people={attendees}
+            empty={
+              query ? (
+                <>Nobody from the coworking sessions matches “{query}”.</>
+              ) : (
+                <>Nobody from the coworking sessions is listed yet.</>
+              )
+            }
+          />
+        </section>
+
+        {query && !people.length ? (
+          <p className="event-empty">
+            Nobody matches “{query}”. <Link href="/explore">See everyone</Link>.
+          </p>
+        ) : null}
       </main>
     </>
   );
