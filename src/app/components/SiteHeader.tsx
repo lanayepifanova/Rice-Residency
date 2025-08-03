@@ -50,6 +50,9 @@ export async function SiteHeader() {
                 <a href="/explore">People</a>
               </li>
               <li>
+                <a href="/games">Games</a>
+              </li>
+              <li>
                 <a href="/notifications">Notifications</a>
               </li>
               <li>

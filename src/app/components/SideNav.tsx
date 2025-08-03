@@ -10,6 +10,7 @@ const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/explore", label: "People", icon: ExploreIcon },
   { href: "/archive", label: "Archive", icon: ArchiveIcon },
+  { href: "/games", label: "Games", icon: GamesIcon },
   { href: "/events/new", label: "Create", icon: CreateIcon },
   { href: "/notifications", label: "Notifications", icon: NotificationsIcon },
 ];
@@ -101,6 +102,17 @@ function CreateIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function GamesIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {/* Two overlapping cards: the back one tilted, the front one square on. */}
+      <path d="M9 4h8v13H9z" />
+      <path d="M7.4 6.6 5 7.3l2.6 9.4 1.4-.4" />
+      <path d="M13 8.5 14.5 11 13 13.5 11.5 11z" />
     </svg>
   );
 }

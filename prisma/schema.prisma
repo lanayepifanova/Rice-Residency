@@ -110,6 +110,7 @@ model User {
   invitesAccepted        EventInvite[]           @relation("InviteRecipient")
   shareLinksCreated      EventShareLink[]
   sessions               Session[]
+  gamePlayer             GamePlayer?
 }
 
 /// A signed-in browser.
@@ -325,4 +326,88 @@ model NotificationPreference {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// A card game the house keeps a running tally for.
+model CardGame {
+  id   String @id @default(cuid())
+  name String
+  /// Addressable in a URL, and the stable key results are imported against: a
+  /// game's display name can be reworded without orphaning its rows.
+  slug String @unique
+  /// House rules, the usual stakes, whatever is worth saying about it.
+  description String?
+  /// Manual ordering, so the game the house actually plays sits above the one
+  /// tried once, rather than whichever sorts first alphabetically.
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions GameSession[]
+}
+
+/// Someone who plays. Deliberately not the same thing as a `User`.
+///
+/// Most people at the table have no account — the tally predates anyone signing
+/// up, and turning every player into a `User` would list them in the house
+/// directory as a resident with a blank profile. `userId` links the ones who do
+/// have accounts, so their name in the standings reaches their profile.
+model GamePlayer {
+  id     String  @id @default(cuid())
+  name   String
+  slug   String  @unique
+  userId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  scores GameSessionScore[]
+}
+
+/// One sitting: a date, a game, and the number of rounds played.
+///
+/// Scores are stored per sitting rather than as a running total per person,
+/// because that is the shape results are actually recorded in. Adding a night
+/// is then additive, and the totals on the standings page stay a derivation
+/// rather than a number somebody has to remember to update.
+model GameSession {
+  id     String @id @default(cuid())
+  gameId String
+  /// Date only, as text. The house records a night, not an instant, and a
+  /// timestamp column would drag a timezone into a value that has none.
+  playedOn String
+  /// Rounds played that night. This is the denominator for a player's share,
+  /// and it is stored rather than counted from the score rows because a round
+  /// with two winners produces two of them.
+  rounds Int
+  /// Separates two sittings of the same game on one date — 15 July went Cambio,
+  /// then Chinese Poker, then Cambio again.
+  ordinal Int     @default(1)
+  note    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  game   CardGame           @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  scores GameSessionScore[]
+
+  @@unique([gameId, playedOn, ordinal])
+  @@index([gameId, playedOn])
+}
+
+/// What one player scored in one sitting.
+model GameSessionScore {
+  id        String @id @default(cuid())
+  sessionId String
+  playerId  String
+  /// Rounds won that night. A round shared by two players — a tie, or a team
+  /// win — counts one point each, which is how the house scores it.
+  points Int @default(0)
+
+  session GameSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  player  GamePlayer  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, playerId])
+  @@index([playerId])
 }

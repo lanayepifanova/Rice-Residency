@@ -1158,3 +1158,81 @@ img.profile-image {
     gap: 8px;
   }
 }
+
+.games-intro {
+  max-width: 60ch;
+  margin: 8px 0 0;
+  color: #666666;
+  font-size: 14px;
+}
+
+/* Standings tables on /games. The app had no table styling before this, so
+   these follow the same rules as everything else: one black hairline, uppercase
+   micro-labels, numbers in the monospace face so columns line up. */
+.standings {
+  width: 100%;
+  margin-top: 12px;
+  border: 1px solid #000000;
+  border-collapse: collapse;
+}
+
+.standings th,
+.standings td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #dddddd;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.standings thead th {
+  border-bottom: 1px solid #000000;
+  /* Headers stay on one line: "Win rate" wrapping made the header row twice as
+     tall as it needed to be, and the column widths below are minimums. */
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666666;
+}
+
+.standings tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.standings-rank {
+  width: 40px;
+  color: #666666;
+}
+
+.standings-number {
+  width: 72px;
+  font-family: var(--font-mono);
+  text-align: right;
+  /* Tabular figures: without this, a 1 is narrower than a 7 and the column
+     visibly wobbles down the page. */
+  font-variant-numeric: tabular-nums;
+}
+
+.standings-player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.standings-player .profile-image {
+  width: 28px;
+  height: 28px;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .standings th,
+  .standings td {
+    padding: 6px;
+  }
+
+  .standings-number {
+    width: 52px;
+  }
+}
