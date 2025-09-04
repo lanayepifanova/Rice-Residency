@@ -4,104 +4,95 @@ The goal: a URL that anyone in the house can open and read — the calendar, the
 event pages, the directory, the card-game standings — with no account, on their
 phone.
 
-## The one thing that has to change
+## How it works
 
-The app reads Postgres on every request. On this laptop that database is
-`localhost:5432`, and *localhost means "the machine asking"* — so a server in
-Vercel's datacenter that connects to `localhost:5432` reaches its own empty
-container, not this Mac. There is no setting that makes it reach here. A
-deployed site needs a database that also lives on the internet.
-
-That does not mean giving up the local database. The arrangement below keeps
-this machine as the copy of record and treats the hosted one as a mirror:
+The site is built into static files on this laptop and those files are what get
+deployed. Postgres is read during the build, here, where it lives; nothing in
+the datacenter ever holds a connection string, because nothing in the datacenter
+runs any of this code.
 
 ```
   this laptop                              the internet
   ┌────────────────────┐                   ┌────────────────────┐
-  │ Postgres 14        │  npm run          │ Postgres (Neon)    │
-  │ rice_residency     │  db:push-live ──> │ same tables,       │
-  │                    │                   │ same rows          │
-  │ npm run dev        │                   │         ▲          │
-  └────────────────────┘                   │         │ reads    │
-                                           │ ┌───────┴────────┐ │
-  git push ─────────────────────────────>  │ │ Vercel         │ │
-                                           │ │ the site       │ │
-                                           │ └────────────────┘ │
-                                           └────────────────────┘
+  │ Postgres 14        │                   │ the site           │
+  │ rice_residency     │                   │ 102 static pages   │
+  │        │           │                   │                    │
+  │        │ read at   │   npm run         │ no database        │
+  │        ▼ build     │   deploy ──────>  │ no server          │
+  │ next build         │                   │ nothing to break   │
+  │        │           │                   │                    │
+  │        ▼           │                   └────────────────────┘
+  │ out/               │
+  └────────────────────┘
 ```
 
-Edit the house data locally the way you already do, then run one command to push
-it live. Nothing about local development changes.
+The database never leaves this machine and is never exposed. The trade is that
+the site is a photograph rather than a window: it shows what was true when it
+was built, and changing the house data means building again.
+
+## What still updates on its own
+
+Dates move between the home page and the archive without a rebuild. The pages
+carry every date they know about along with its timestamp, and the browser
+decides which side of *now* each one falls on. A Sunday session leaves the
+front page the Sunday evening it happens, whether or not anyone has rebuilt
+since. Same for a profile's "hosting" and "been to" lists, and for the "this has
+already happened" line on a date page.
+
+What does *not* update on its own is the data itself: a new event, a new
+resident, a card night, an edited bio. Those need a build.
 
 ## Once, to set it up
 
-**1. Push the code to GitHub.** It is already on `main`:
+**1. Install the Vercel CLI and sign in.** The deploy runs from this machine
+rather than from a git push, so the CLI is the tool:
 
 ```bash
-git push origin main
+npm i -g vercel
+vercel login
 ```
 
-**2. Import it into Vercel.** At [vercel.com/new](https://vercel.com/new),
-choose the `Rice-Residency` repository. Vercel detects Next.js on its own — the
-framework preset, build command, and output directory are all correct as
-offered. Do not deploy yet; add the database first (step 3) so the first build
-comes up with data.
-
-**3. Create the database.** In the new project, go to **Storage → Create
-Database → Neon (Postgres)**. Accept the free plan. Vercel writes `DATABASE_URL`
-and the rest into the project's environment variables itself — there is nothing
-to copy by hand.
-
-**4. Add one more environment variable.** Under **Settings → Environment
-Variables**, add:
-
-| Name | Value | Why |
-| --- | --- | --- |
-| `DIRECT_URL` | the same value as `DATABASE_URL` | Prisma's CLI wants a non-pooled connection under its own name. Copy `DATABASE_URL`'s value into it. |
-
-That is the whole list. There are no auth secrets, API keys, or storage tokens
-to set: the site has no accounts and writes no files.
-
-**5. Deploy.** Push, or hit **Redeploy**. The build runs `prisma generate` and
-`next build`; it reads no rows, so it cannot fail on an empty database — every
-page is `force-dynamic` and fetches at request time.
-
-**6. Fill the database.** Copy the connection string from **Storage → your
-database → `.env.local` tab**, put it in this repo's `.env.local` as
-`LIVE_DATABASE_URL`, then:
+**2. Link the project.** From this directory:
 
 ```bash
-npm run db:push-live
+vercel link
 ```
 
-That dumps the local database and loads it into the live one — schema, events,
-people, photos-by-path, game results, everything. Open the site; it is there.
+Accept creating a new project when it asks. There is no database to attach and
+no environment variable to set — `DATABASE_URL` is a build-time secret that
+stays on this laptop.
+
+**Do not connect the GitHub repository for automatic deploys.** It is the one
+setting that breaks this arrangement. A build triggered on Vercel runs in their
+datacenter, where `localhost:5432` is an empty container, and it would fail —
+or worse, succeed with an empty calendar. Deploys come from here, by hand.
 
 ## Afterwards, whenever
 
-**The house data changed** (a new event date, someone joined, a card night got
-recorded):
+**The house data changed** — a new event date, someone joined, a card night got
+recorded, a photo swapped:
 
 ```bash
-npm run db:push-live
+npm run deploy
 ```
 
-No redeploy. The site reads the database on every request, so it is live the
-moment the push finishes. This replaces the live database wholesale, which is
-the intended direction — this machine is the copy of record.
+That runs `vercel build` here — so the database read happens on this machine —
+and then uploads the finished folder with `vercel deploy --prebuilt`. The
+`--prebuilt` is the whole point: it tells Vercel to publish what it is given
+rather than to build anything itself. Takes about a minute.
 
-**The code changed:** `git push`. Vercel rebuilds by itself.
+**The code changed:** the same command; there is no separate path.
 
 ## One thing to know before sharing the link
 
 **Profile photos are committed files, not uploads.** Every face in the directory
 is an image under `public/people/`, pointed at by that person's `avatarUrl`. The
 site has no upload form, so changing someone's photo is: drop the image in
-`public/people/`, point their row at it locally, and push the data live.
+`public/people/`, point their row at it, and deploy.
 
 ```bash
 psql rice_residency -c "update \"User\" set \"avatarUrl\" = '/people/jane-doe.jpg' where username = 'jane-doe'"
-npm run db:push-live
+npm run deploy
 ```
 
 ## What visitors can do
@@ -115,31 +106,34 @@ Everything, and nothing. Every page is public and every page is read-only:
 | Change anything at all | no |
 
 There is no sign-in form, no sign-up form, no RSVP button, no host controls, and
-no HTTP API — the deployment has no writable surface to guard. Changes to the
-house data are made on the laptop and pushed up.
+no HTTP API. There is not even a server: the deployment is a folder of files, so
+there is no writable surface to guard. Changes to the house data are made on
+this laptop and built up.
 
 ## If something goes wrong
 
 **The build fails on `@prisma/client` not being generated.** `postinstall` runs
 `prisma generate`; check it survived in `package.json`.
 
-**The build fails with `DATABASE_URL is not set` while collecting page data.**
-The build imports every route to read its configuration, so anything built at
-module scope runs with whatever environment the build container has — which
-need not include a database. `src/lib/db.ts` builds the Prisma client on first
-query rather than on import for exactly this reason; if that laziness is ever
-undone, the build starts failing here even though no page reads a row.
+**The build fails with `DATABASE_URL is not set`.** Postgres is not running, or
+`.env.local` is missing. `brew services start postgresql@14`, and check the file
+against `.env.example`.
 
-**The site loads but every page 500s.** The database is empty or unreachable.
-Confirm `DATABASE_URL` is set in Vercel and that `npm run db:push-live` finished
-without errors.
+**The build fails with "Page ... is missing generateStaticParams".** A new
+dynamic route was added without telling the build which pages to make. Every
+`[param]` folder needs a `generateStaticParams` that lists them — see
+`src/app/people/[username]/page.tsx` for the shape.
 
-**`db:push-live` says `pg_dump: command not found`.** The Postgres client tools
-are not on `PATH`. `brew install postgresql@14` puts them there.
+**The build fails with "Cannot access searchParams" or a page suspends.** A page
+tried to read the query string, which a built file does not have. Read it in a
+client component instead, and give the `<Suspense>` around it a fallback that is
+the real content rather than `null` — otherwise that content is missing from the
+built HTML. `src/app/games/page.tsx` does this deliberately.
 
-**`db:push-live` errors on `role "anon" does not exist`.** Only possible if the
-live database was built by running the migrations rather than by this script —
-two early migrations revoke grants from roles that only Supabase creates. The
-push script sidesteps it entirely by dumping with `--no-privileges`. If you do
-want to run migrations against the live database instead, create the two empty
-roles there first, exactly as the README describes for a fresh local one.
+**The site is live but a date is on the wrong page.** That split happens in the
+browser, so it is a clock question, not a build question — check the reader's
+device date before rebuilding.
+
+**A page 404s that should exist.** Static export only creates the pages
+`generateStaticParams` named, so a person or event added since the last deploy
+has no page until the next one. Deploy again.

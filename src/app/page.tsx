@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { seriesSchedules } from "@/lib/server/feed";
-import { SeriesEvents } from "./components/EventGrid";
+import { BUILT_AT } from "@/lib/server/built-at";
+import { SCHEDULE_DATES, seriesSchedules } from "@/lib/server/feed";
+import { TimedSeriesEvents } from "./components/TimedEvents";
 import { SideNav } from "./components/SideNav";
 import { SiteHeader } from "./components/SiteHeader";
-
-export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const schedules = await seriesSchedules();
@@ -18,9 +17,12 @@ export default async function Home() {
 
         {schedules.length ? (
           schedules.map((section) => (
-            <SeriesEvents
+            <TimedSeriesEvents
               key={section.seriesId}
               section={section}
+              horizon="upcoming"
+              take={SCHEDULE_DATES}
+              builtAt={BUILT_AT}
               empty={
                 <>
                   No dates scheduled ahead. <Link href="/archive">See past dates</Link>.

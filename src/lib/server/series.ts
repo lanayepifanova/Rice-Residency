@@ -920,7 +920,6 @@ export async function listOccurrenceSummaries(
 export type InstanceView = {
   instance: EventInstance;
   series: EventSeries;
-  past: boolean;
   cancelled: boolean;
 };
 
@@ -941,10 +940,12 @@ export async function loadInstanceView(
     return null;
   }
 
+  // No `past` here any more. Whether an occurrence has happened depends on when
+  // the page is read, not on when it was built, so that one is worked out in
+  // the browser from `instance.startsAt`.
   return {
     instance,
     series: instance.series,
-    past: instance.startsAt.getTime() < Date.now(),
     cancelled: instance.status === "cancelled" || instance.series.status === "cancelled",
   };
 }

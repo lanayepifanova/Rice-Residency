@@ -1,4 +1,7 @@
+"use client";
+
 import type { CapacitySnapshot } from "@/lib/domain/rsvp";
+import { useReaderNow } from "./use-reader-now";
 
 /**
  * How full an occurrence is.
@@ -6,18 +9,29 @@ import type { CapacitySnapshot } from "@/lib/domain/rsvp";
  * What is left of the RSVP panel now that the site has no accounts: the numbers
  * are still worth showing — whether a dinner has spots left is the first thing
  * anyone reads a date for — but there is nobody to attribute an answer to, so
- * there is nothing to press. A plain server component, because without a form
- * there is no state to hold.
+ * there is nothing to press.
+ *
+ * It became a client component when the site stopped being rendered per
+ * request. The one thing it says that is not a fact about the row — whether the
+ * date has already happened — is a fact about the clock, and the build does not
+ * have the reader's. So it takes the date and works that out on arrival rather
+ * than being handed a `past` that was true whenever the site was last built.
  */
 export function AttendanceLine({
   capacity,
   cancelled,
-  past,
+  startsAt,
+  builtAt,
 }: {
   capacity: CapacitySnapshot;
   cancelled: boolean;
-  past: boolean;
+  /** When the occurrence starts, as an ISO string. */
+  startsAt: string;
+  builtAt: number;
 }) {
+  const now = useReaderNow(builtAt);
+  const past = Date.parse(startsAt) < now;
+
   if (cancelled) {
     return (
       <section className="rsvp-panel">

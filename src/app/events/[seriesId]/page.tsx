@@ -1,37 +1,36 @@
-import { notFound, redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
-import { nextOccurrenceHref } from "@/lib/server/series";
+import { notFound } from "next/navigation";
+import { seriesDates, publicSeriesIds } from "@/lib/server/feed";
+import { SeriesForward } from "./SeriesForward";
 import { SideNav } from "../../components/SideNav";
 import { SiteHeader } from "../../components/SiteHeader";
 
-export const dynamic = "force-dynamic";
-
 /**
  * There is no series page any more: an event is a date, and that is what people
- * are sent to. The route stays as a forward so share links and notifications
+ * are sent to. The route stays as a forward so share links and nav entries
  * already pointing at a series still land somewhere real.
  *
  * A series with no dates on it yet has nothing to forward to. It used to bounce
  * to the home page, which read as a broken link — the Parties and Dinners
  * entries in the nav both did — so it says so instead. A series id that matches
  * nothing at all is a different answer: "coming soon" would be a promise about
- * an event nobody is planning, so that one is a 404.
+ * an event nobody is planning, so that one is a 404. With the site prerendered
+ * that 404 is simply the page never being built.
  */
-export default async function SeriesPage({ params, searchParams }: PageProps<"/events/[seriesId]">) {
+export async function generateStaticParams() {
+  const ids = await publicSeriesIds();
+
+  return ids.map((seriesId) => ({ seriesId }));
+}
+
+export default async function SeriesPage({ params }: PageProps<"/events/[seriesId]">) {
   const { seriesId } = await params;
-  const query = await searchParams;
-  const href = await nextOccurrenceHref(seriesId);
+  const dates = await seriesDates(seriesId);
 
-  if (href === "/") {
-    const series = await prisma.eventSeries.findUnique({
-      where: { id: seriesId },
-      select: { id: true },
-    });
+  if (!dates) {
+    notFound();
+  }
 
-    if (!series) {
-      notFound();
-    }
-
+  if (dates.length === 0) {
     return (
       <>
         <SiteHeader />
@@ -43,5 +42,5 @@ export default async function SeriesPage({ params, searchParams }: PageProps<"/e
     );
   }
 
-  redirect(query.created ? `${href}?created=1` : href);
+  return <SeriesForward dates={dates} />;
 }

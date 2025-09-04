@@ -11,6 +11,8 @@ import {
   formatTimeRange,
   timezoneLabel,
 } from "@/lib/domain/format";
+import { BUILT_AT } from "@/lib/server/built-at";
+import { publicOccurrenceParams } from "@/lib/server/feed";
 import { displayName } from "@/lib/server/profile";
 import { getAttendance } from "@/lib/server/rsvp";
 import { loadInstanceView, occurrenceTitle } from "@/lib/server/series";
@@ -18,7 +20,15 @@ import { AttendanceLine } from "../../../components/AttendanceLine";
 import { SideNav } from "../../../components/SideNav";
 import { SiteHeader } from "../../../components/SiteHeader";
 
-export const dynamic = "force-dynamic";
+/**
+ * One page per date. This is the bulk of the site — every other page is a way
+ * of getting to one of these — so it is also where prerendering pays for
+ * itself: the whole calendar becomes files, and nothing has to ask Postgres
+ * what is on.
+ */
+export async function generateStaticParams() {
+  return publicOccurrenceParams();
+}
 
 export async function generateMetadata({
   params,
@@ -55,7 +65,7 @@ export default async function InstancePage({
     notFound();
   }
 
-  const { instance, series, past, cancelled } = view;
+  const { instance, series, cancelled } = view;
 
   const [organizer, attendance] = await Promise.all([
     prisma.user.findUnique({ where: { id: series.organizerId } }),
@@ -128,7 +138,8 @@ export default async function InstancePage({
             <AttendanceLine
               capacity={attendance.capacity}
               cancelled={cancelled}
-              past={past}
+              startsAt={instance.startsAt.toISOString()}
+              builtAt={BUILT_AT}
             />
           </section>
 

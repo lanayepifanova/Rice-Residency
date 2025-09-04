@@ -1,18 +1,17 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { listPeople } from "@/lib/server/people";
 import { PeopleGrid } from "../components/PeopleGrid";
+import { ShareExpiredNotice } from "../components/ShareExpiredNotice";
 import { SideNav } from "../components/SideNav";
 import { SiteHeader } from "../components/SiteHeader";
-
-export const dynamic = "force-dynamic";
 
 /**
  * Explore is people, not events — the events are on the home page. This is the
  * house directory: who lives here, who comes to cowork, and what they are all
  * working on.
  */
-export default async function ExplorePage({ searchParams }: PageProps<"/explore">) {
-  const params = await searchParams;
+export default async function ExplorePage() {
   const people = await listPeople();
   const leads = people.filter((person) => person.lead);
   // Leads are residents too, but listing them twice would read as two different
@@ -27,11 +26,11 @@ export default async function ExplorePage({ searchParams }: PageProps<"/explore"
       <main>
         <h1 className="welcome-heading">People</h1>
 
-        {params.share === "expired" ? (
-          <p className="banner-danger" role="status">
-            That share link has been revoked or never existed.
-          </p>
-        ) : null}
+        {/* Suspense because the notice reads the query string, which a
+            prerendered page has no value for until it reaches a browser. */}
+        <Suspense fallback={null}>
+          <ShareExpiredNotice />
+        </Suspense>
 
         {/* Three lists, because the house draws these lines and conflating them
             loses the distinctions that matter: who runs it, and who lives in

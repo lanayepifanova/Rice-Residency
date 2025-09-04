@@ -3,13 +3,27 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { formatDay } from "@/lib/domain/format";
+import { BUILT_AT } from "@/lib/server/built-at";
 import { attendedEvents, hostedEvents } from "@/lib/server/feed";
-import { getPerson, getPersonRecord } from "@/lib/server/people";
-import { EventSection } from "../../components/EventGrid";
+import { getPerson, getPersonRecord, listPeople } from "@/lib/server/people";
+import { TimedEventSection } from "../../components/TimedEvents";
 import { SideNav } from "../../components/SideNav";
 import { SiteHeader } from "../../components/SiteHeader";
 
-export const dynamic = "force-dynamic";
+/**
+ * One page per handle, built up front.
+ *
+ * A profile is addressed by handle, so somebody who has not set one has no page
+ * to build — the directory lists them without a link, and this skips them for
+ * the same reason.
+ */
+export async function generateStaticParams() {
+  const people = await listPeople();
+
+  return people
+    .filter((person) => person.username)
+    .map((person) => ({ username: person.username! }));
+}
 
 export async function generateMetadata({
   params,
@@ -44,8 +58,8 @@ export default async function PersonPage({ params }: PageProps<"/people/[usernam
   const person = (await getPerson(username))!;
 
   const [hosting, attended] = await Promise.all([
-    hostedEvents(record.id, 6),
-    attendedEvents(record.id, 6),
+    hostedEvents(record.id),
+    attendedEvents(record.id),
   ]);
 
   return (
@@ -119,15 +133,28 @@ export default async function PersonPage({ params }: PageProps<"/people/[usernam
           ) : null}
         </dl>
 
-        <EventSection
+        {/* Both lists are cut against the reader's clock rather than the
+            build's: what someone is hosting is the dates still ahead, and what
+            they have been to is the dates behind. One person crosses from the
+            first list to the second every time an event happens, which is not
+            a moment a prerender can be standing at. */}
+        <TimedEventSection
           title="Hosting"
           events={hosting}
+          horizon="upcoming"
+          take={6}
+          onePerSeries
+          builtAt={BUILT_AT}
           empty={<>Not hosting anything right now.</>}
         />
 
-        <EventSection
+        <TimedEventSection
           title="Events they have been to"
           events={attended}
+          horizon="past"
+          take={6}
+          onePerSeries
+          builtAt={BUILT_AT}
           empty={<>Nothing yet.</>}
         />
       </main>

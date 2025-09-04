@@ -1,19 +1,10 @@
 import type { EventInstance, EventSeries } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { coverImageFor } from "@/lib/domain/event-images";
+import type { EventCard, SeriesSection } from "@/lib/domain/events";
 import { formatDateLabel, formatShort, formatTimeRange, timezoneLabel } from "@/lib/domain/format";
 
-export type EventCard = {
-  seriesId: string;
-  /** Null for a series whose dates are not settled yet: there is no occurrence
-   * to point at, so the card links to the series itself. */
-  instanceId: string | null;
-  title: string;
-  meta: string;
-  image: string;
-  href: string;
-  cancelled: boolean;
-};
+export type { EventCard, SeriesSection } from "@/lib/domain/events";
 
 type Row = EventInstance & { series: EventSeries };
 
@@ -26,6 +17,7 @@ function toCard(row: Row): EventCard {
     image: coverImageFor(row.seriesId, row.series.coverImage),
     href: `/events/${row.seriesId}/${row.id}`,
     cancelled: row.status === "cancelled" || row.series.status === "cancelled",
+    startsAt: row.startsAt.toISOString(),
   };
 }
 
@@ -70,43 +62,40 @@ export async function upcomingPublicEvents(options: {
     .map(toCard);
 }
 
-/** Everything this user hosts, upcoming occurrence first. */
-export async function hostedEvents(userId: string, take = 12): Promise<EventCard[]> {
+/**
+ * Everything this user hosts, soonest first.
+ *
+ * The occurrences are not narrowed to the ones still ahead and not cut down to
+ * one per series here, the way they were when this ran per request. Both of
+ * those depend on the current time, and the current time is the one thing a
+ * prerender does not have: the page is built once and read for weeks. The whole
+ * run is handed over and `selectByTime` makes the cut in the browser.
+ */
+export async function hostedEvents(userId: string): Promise<EventCard[]> {
   const rows = await prisma.eventInstance.findMany({
     where: { series: { organizerId: userId } },
     include: { series: true },
     orderBy: { startsAt: "asc" },
-    take: take * 8,
   });
 
-  const now = Date.now();
-  // A host cares about the next occurrence of each event; only once every
-  // occurrence is behind them does the most recent past one become the useful
-  // thing to show.
-  const upcoming = rows.filter((row) => row.startsAt.getTime() >= now);
-  const past = rows.filter((row) => row.startsAt.getTime() < now).reverse();
-
-  return firstPerSeries([...upcoming, ...past])
-    .slice(0, take)
-    .map(toCard);
+  return rows.map(toCard);
 }
 
-/** Past occurrences this user said they were going to. */
-export async function attendedEvents(userId: string, take = 12): Promise<EventCard[]> {
+/**
+ * Occurrences this user said they were going to, newest first.
+ *
+ * "Has it happened yet" is left to the browser, so a date they answered for
+ * moves from nothing to the attended list on the day it passes rather than on
+ * the day the site is next built.
+ */
+export async function attendedEvents(userId: string): Promise<EventCard[]> {
   const rsvps = await prisma.eventRsvp.findMany({
-    where: {
-      userId,
-      status: "going",
-      instance: { startsAt: { lt: new Date() } },
-    },
+    where: { userId, status: "going" },
     include: { instance: { include: { series: true } } },
     orderBy: { instance: { startsAt: "desc" } },
-    take: take * 6,
   });
 
-  return firstPerSeries(rsvps.map((rsvp) => rsvp.instance))
-    .slice(0, take)
-    .map(toCard);
+  return rsvps.map((rsvp) => toCard(rsvp.instance));
 }
 
 /** Upcoming occurrences this user has answered going or maybe. */
@@ -159,23 +148,6 @@ export async function exploreEvents(filter: ExploreFilter = "all", take = 48): P
 }
 
 /**
- * One series and the dates under it. The home page is organised by series
- * rather than by date, because Rice Residency runs a handful of standing
- * events and "when is the next coworking session" is the question being asked,
- * not "what is happening next" across everything at once.
- */
-export type SeriesSection = {
-  seriesId: string;
-  title: string;
-  /** Null when the title already says the cadence, which is the usual case. */
-  summary: string | null;
-  href: string;
-  /** True when the dates are not settled yet, so there is nothing to list. */
-  planned: boolean;
-  events: EventCard[];
-};
-
-/**
  * How many dates a series section lists. A series with an end date shows its
  * whole remaining run; this only bounds an open-ended one so the grid cannot
  * grow without limit.
@@ -199,6 +171,7 @@ function toDateCard(row: Row): EventCard {
     image: row.coverImage ?? coverImageFor(row.id),
     href: `/events/${row.seriesId}/${row.id}`,
     cancelled: row.status === "cancelled" || row.series.status === "cancelled",
+    startsAt: row.startsAt.toISOString(),
   };
 }
 
@@ -206,16 +179,12 @@ function toDateCard(row: Row): EventCard {
  * Every public series with its upcoming dates. Series still being planned come
  * last and carry no dates — there are none to carry yet.
  */
-export async function seriesSchedules(take = SCHEDULE_DATES): Promise<SeriesSection[]> {
-  const now = new Date();
-
+export async function seriesSchedules(): Promise<SeriesSection[]> {
   const series = await prisma.eventSeries.findMany({
     where: { visibility: "public", status: "active" },
     include: {
       instances: {
-        where: { startsAt: { gte: now } },
         orderBy: { startsAt: "asc" },
-        take,
       },
     },
     orderBy: { createdAt: "asc" },
@@ -241,16 +210,16 @@ export async function seriesSchedules(take = SCHEDULE_DATES): Promise<SeriesSect
 export const ARCHIVE_FROM = new Date("2026-08-30T00:00:00.000Z");
 
 /** Dates that have already happened, newest first, grouped by series. */
-export async function archivedSeries(take = 24): Promise<SeriesSection[]> {
-  const now = new Date();
-
+export async function archivedSeries(): Promise<SeriesSection[]> {
   const series = await prisma.eventSeries.findMany({
     where: { visibility: "public" },
     include: {
       instances: {
-        where: { startsAt: { lt: now, gte: ARCHIVE_FROM } },
+        // ARCHIVE_FROM is a fixed date, so it still belongs in the query; the
+        // "already happened" half of the old range was the moving part and it
+        // has gone to the browser.
+        where: { startsAt: { gte: ARCHIVE_FROM } },
         orderBy: { startsAt: "desc" },
-        take,
       },
     },
     orderBy: { createdAt: "asc" },
@@ -281,4 +250,121 @@ export async function plannedSeries(): Promise<Array<{ id: string; title: string
   });
 
   return rows.map((row) => ({ id: row.id, title: row.title }));
+}
+
+/**
+ * Every public series id, so a page can be built for each.
+ *
+ * Draft series are included. They are the ones with no dates yet, and their
+ * "coming soon" page is exactly what the Parties and Dinners entries in the nav
+ * point at before a date is on the books.
+ */
+export async function publicSeriesIds(): Promise<string[]> {
+  const rows = await prisma.eventSeries.findMany({
+    where: { visibility: "public" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true },
+  });
+
+  return rows.map((row) => row.id);
+}
+
+/**
+ * The dates under one series, soonest first, or null if there is no such
+ * public series.
+ *
+ * The empty array and null are different answers and the caller treats them
+ * differently: nothing scheduled yet is "coming soon", and no such event is a
+ * 404.
+ */
+export async function seriesDates(seriesId: string): Promise<EventCard[] | null> {
+  const series = await prisma.eventSeries.findUnique({
+    where: { id: seriesId },
+    include: { instances: { orderBy: { startsAt: "asc" } } },
+  });
+
+  if (!series || series.visibility !== "public") {
+    return null;
+  }
+
+  return series.instances.map((instance) => toDateCard({ ...instance, series }));
+}
+
+/**
+ * Every public occurrence, as the `{ seriesId, instanceId }` pairs the date
+ * pages are built from.
+ *
+ * Cancelled dates are included on purpose. A cancelled event is exactly the one
+ * somebody with the link in a message needs to be able to open — the page says
+ * it is off, which a 404 would not.
+ */
+export async function publicOccurrenceParams(): Promise<
+  Array<{ seriesId: string; instanceId: string }>
+> {
+  const rows = await prisma.eventInstance.findMany({
+    where: { series: { visibility: "public" } },
+    orderBy: { startsAt: "asc" },
+    select: { id: true, seriesId: true },
+  });
+
+  return rows.map((row) => ({ seriesId: row.seriesId, instanceId: row.id }));
+}
+
+export type ShareTarget = {
+  token: string;
+  /** Where to send the visitor, or null when the dates decide it. */
+  destination: string | null;
+  /** The series' dates, for a series-wide link whose target moves with time. */
+  dates: EventCard[];
+};
+
+/**
+ * Every share link, resolved as far as it can be resolved ahead of time.
+ *
+ * A link to one date resolves completely — that page is where it goes, today
+ * and next year. A link to a whole series does not: it means "the next one",
+ * and which date that is changes without the data changing, so its dates are
+ * carried across and the browser picks between them.
+ *
+ * Revoked links are built too. A token that was shared and then withdrawn is
+ * one somebody still has in a message, and telling them it was revoked is a
+ * better answer than a page that does not exist.
+ *
+ * Opening a link no longer records the visit. The counter it used to keep was
+ * the last write the public site performed, and it was being written to a
+ * database the built site cannot reach — a per-visit count was never going to
+ * survive the site becoming files.
+ */
+export async function listShareTargets(): Promise<ShareTarget[]> {
+  const links = await prisma.eventShareLink.findMany({
+    include: { series: { include: { instances: { orderBy: { startsAt: "asc" } } } } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return links.map((link) => {
+    const expired = "/explore?share=expired";
+
+    if (link.revokedAt || !link.series || link.series.visibility !== "public") {
+      return { token: link.token, destination: expired, dates: [] };
+    }
+
+    if (link.instanceId) {
+      return {
+        token: link.token,
+        destination: `/events/${link.seriesId}/${link.instanceId}`,
+        dates: [],
+      };
+    }
+
+    const dates = link.series.instances.map((instance) =>
+      toDateCard({ ...instance, series: link.series! }),
+    );
+
+    // A series link with no dates under it has nowhere to go but the calendar.
+    return {
+      token: link.token,
+      destination: dates.length ? null : "/",
+      dates,
+    };
+  });
 }

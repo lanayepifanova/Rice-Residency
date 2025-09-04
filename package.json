@@ -16,7 +16,8 @@
     "test:integration": "vitest run --config vitest.integration.config.mts",
     "db:seed:games": "tsx prisma/seed-games.ts",
     "db:seed:people": "tsx prisma/seed-people.ts",
-    "db:push-live": "tsx scripts/push-live.ts"
+    "db:push-live": "tsx scripts/push-live.ts",
+    "deploy": "vercel build --prod && vercel deploy --prebuilt --prod"
   },
   "engines": {
     "node": ">=20"

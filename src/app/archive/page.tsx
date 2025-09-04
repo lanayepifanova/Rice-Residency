@@ -1,44 +1,35 @@
+import { BUILT_AT } from "@/lib/server/built-at";
 import { archivedSeries } from "@/lib/server/feed";
-import { SeriesEvents } from "../components/EventGrid";
+import { TimedArchive } from "../components/TimedEvents";
 import { SideNav } from "../components/SideNav";
 import { SiteHeader } from "../components/SiteHeader";
-
-export const dynamic = "force-dynamic";
 
 /**
  * Where dates go once they have happened. The home page only carries what is
  * still ahead, so without this everything that has already run would simply
  * disappear.
  *
- * Nothing has reached it yet — the first date the archive keeps has not passed
- * — so while it is empty the page says only that, rather than explaining an
- * archive that has nothing in it to explain.
+ * Which dates those are is decided in the browser, not here — this page is
+ * built once and read for weeks, and the boundary it draws moves every day. So
+ * the whole archived run is sent down and `TimedArchive` keeps the part of it
+ * that is behind the reader. That is also what decides whether there is a page
+ * to show at all: until the first archived date has passed there is nothing in
+ * it, and it says so rather than explaining an empty archive.
  */
 export default async function ArchivePage() {
   const sections = await archivedSeries();
-
-  if (sections.length === 0) {
-    return (
-      <>
-        <SiteHeader />
-        <SideNav />
-        <main>
-          <p className="coming-soon">coming soon...</p>
-        </main>
-      </>
-    );
-  }
 
   return (
     <>
       <SiteHeader />
       <SideNav />
       <main>
-        <h1 className="welcome-heading">Archive</h1>
-
-        {sections.map((section) => (
-          <SeriesEvents key={section.seriesId} section={section} empty={null} />
-        ))}
+        <TimedArchive
+          sections={sections}
+          take={24}
+          builtAt={BUILT_AT}
+          fallback={<p className="coming-soon">coming soon...</p>}
+        />
       </main>
     </>
   );

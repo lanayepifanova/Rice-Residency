@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
-import type { EventCard, SeriesSection } from "@/lib/server/feed";
+import type { EventCard, SeriesSection } from "@/lib/domain/events";
 
 /**
  * The event grid, plus the empty state that goes with it. Empty is a real state
