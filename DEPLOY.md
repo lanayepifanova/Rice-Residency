@@ -63,7 +63,8 @@ That is the whole list. There are no auth secrets, API keys, or storage tokens
 to set: the site has no accounts and writes no files.
 
 **5. Deploy.** Push, or hit **Redeploy**. The build runs `prisma generate` and
-`next build`; it does not touch the database, so it cannot fail on an empty one.
+`next build`; it reads no rows, so it cannot fail on an empty database — every
+page is `force-dynamic` and fetches at request time.
 
 **6. Fill the database.** Copy the connection string from **Storage → your
 database → `.env.local` tab**, put it in this repo's `.env.local` as
@@ -121,6 +122,13 @@ house data are made on the laptop and pushed up.
 
 **The build fails on `@prisma/client` not being generated.** `postinstall` runs
 `prisma generate`; check it survived in `package.json`.
+
+**The build fails with `DATABASE_URL is not set` while collecting page data.**
+The build imports every route to read its configuration, so anything built at
+module scope runs with whatever environment the build container has — which
+need not include a database. `src/lib/db.ts` builds the Prisma client on first
+query rather than on import for exactly this reason; if that laziness is ever
+undone, the build starts failing here even though no page reads a row.
 
 **The site loads but every page 500s.** The database is empty or unreachable.
 Confirm `DATABASE_URL` is set in Vercel and that `npm run db:push-live` finished
