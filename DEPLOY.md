@@ -44,28 +44,32 @@ resident, a card night, an edited bio. Those need a build.
 
 ## Once, to set it up
 
-**1. Install the Vercel CLI and sign in.** The deploy runs from this machine
-rather than from a git push, so the CLI is the tool:
+**1. Sign in.** The CLI is already a dev dependency, so there is nothing to
+install — but logging in is interactive and has to be done by hand:
 
 ```bash
-npm i -g vercel
-vercel login
+npx vercel login
 ```
 
 **2. Link the project.** From this directory:
 
 ```bash
-vercel link
+npx vercel link
 ```
 
-Accept creating a new project when it asks. There is no database to attach and
-no environment variable to set — `DATABASE_URL` is a build-time secret that
-stays on this laptop.
+Choose the **existing** `rice-residency` project rather than creating a new one,
+so the site keeps the `rice-residency.vercel.app` address. There is no database
+to attach and no environment variable to set — `DATABASE_URL` is a build-time
+secret that stays on this laptop.
 
 **Do not connect the GitHub repository for automatic deploys.** It is the one
-setting that breaks this arrangement. A build triggered on Vercel runs in their
-datacenter, where `localhost:5432` is an empty container, and it would fail —
-or worse, succeed with an empty calendar. Deploys come from here, by hand.
+setting that breaks this arrangement, and it breaks it twice over: a build
+triggered on Vercel runs in their datacenter, where `localhost:5432` is an empty
+container. Before this repo was built into files that meant a site that answered
+every request with "Something went wrong"; now it means a build that fails
+outright. Either way the answer is the same — the build has to happen where the
+database is, which is here. The connection was removed on 4 September 2025 for
+exactly this reason; do not add it back.
 
 ## Afterwards, whenever
 
