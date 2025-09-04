@@ -123,6 +123,28 @@ this laptop and built up.
 `.env.local` is missing. `brew services start postgresql@14`, and check the file
 against `.env.example`.
 
+**The build fails with `Can't reach database server at base`.** Nothing is
+called `base`. That hostname is what a Postgres URL parser produces from the
+literal string `[SENSITIVE]`, which is what `vercel build` writes into
+`.vercel/.env.production.local` when the project has a `DATABASE_URL` stored on
+Vercel and marked sensitive — the CLI cannot read a sensitive value back, so it
+pulls down the placeholder instead. That placeholder is in the environment
+before Next.js reads `.env.local`, and Next.js does not overwrite a variable
+that is already set, so the real URL on this laptop never gets a turn.
+
+The fix is to have no database variable on Vercel at all, which is the
+arrangement described above:
+
+```bash
+npx vercel env rm DATABASE_URL production
+npx vercel env rm DIRECT_URL production
+```
+
+`npm run build` on its own is unaffected and will keep passing, because nothing
+is pulled down to shadow `.env.local`; only `npm run deploy` breaks. Two stale
+variables left over from when this app ran a server in the datacenter were
+removed on 4 September 2025 for this reason. Do not add them back.
+
 **The build fails with "Page ... is missing generateStaticParams".** A new
 dynamic route was added without telling the build which pages to make. Every
 `[param]` folder needs a `generateStaticParams` that lists them — see
