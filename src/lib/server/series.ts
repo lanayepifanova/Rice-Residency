@@ -276,9 +276,17 @@ export async function materializeSeries(seriesId: string): Promise<number> {
     return 0;
   }
 
-  // New dates continue the series' deck from where the existing ones left off,
-  // so the pool is walked once rather than restarted every top-up.
-  const alreadyGenerated = await prisma.eventInstance.count({ where: { seriesId } });
+  // Claim this batch's slots in the series' photo deck before writing any of
+  // them. Incrementing and reading back in one statement means two top-ups
+  // running at once get disjoint ranges instead of both reading the same
+  // starting point; burning a slot on a row that turns out to be a duplicate
+  // is fine, handing the same slot out twice is not.
+  const { coverCursor } = await prisma.eventSeries.update({
+    where: { id: seriesId },
+    data: { coverCursor: { increment: occurrences.length } },
+    select: { coverCursor: true },
+  });
+  const firstSlot = coverCursor - occurrences.length;
 
   const result = await prisma.eventInstance.createMany({
     data: occurrences.map((occurrence, position) => ({
@@ -286,7 +294,8 @@ export async function materializeSeries(seriesId: string): Promise<number> {
       startsAt: new Date(occurrence.startsAt),
       endsAt: new Date(occurrence.endsAt),
       localDate: occurrence.localDate,
-      coverImage: seriesImageAt(seriesId, alreadyGenerated + position),
+      coverIndex: firstSlot + position,
+      coverImage: seriesImageAt(seriesId, firstSlot + position),
     })),
     skipDuplicates: true,
   });

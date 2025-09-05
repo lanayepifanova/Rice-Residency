@@ -173,6 +173,13 @@ model EventSeries {
   waitlistEnabled Boolean         @default(true)
   visibility      EventVisibility @default(public)
 
+  /// Next free slot in this series' photo deck. A cursor rather than a count
+  /// of instances: a count falls when a date is deleted and when createMany
+  /// skips a duplicate, and the next top-up then re-deals slots already spent,
+  /// which is how two consecutive dates ended up sharing a photograph. This
+  /// only ever goes up, so a slot is handed out once and never again.
+  coverCursor Int @default(0)
+
   recurrenceRule  Json
   recurrenceUntil DateTime?
   recurrenceCount Int?
@@ -208,6 +215,12 @@ model EventInstance {
   /// and stored rather than derived, so the card in a list and the page it
   /// opens always show the same picture no matter how either is queried.
   coverImage String?
+
+  /// Which slot of the series' shuffled photo deck `coverImage` came from.
+  /// Stored so the choice is auditable and, more to the point, so the next
+  /// occurrence can be handed the following slot without anyone having to
+  /// infer the position from the rows that happen to exist right now.
+  coverIndex Int?
 
   /// Single-occurrence overrides. Null means "inherit from the series", which
   /// is why these are separate nullable columns rather than a JSON blob: an

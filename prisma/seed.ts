@@ -306,21 +306,47 @@ async function main() {
       });
     }
 
-    for (const [position, occurrence] of occurrences.entries()) {
-      // Every date gets its own photo, dealt from the series' own shuffle of
-      // the pool, so no two dates repeat one until the pool is spent.
-      const coverImage = seriesImageAt(seriesId, position);
+    for (const occurrence of occurrences) {
+      const startsAt = new Date(occurrence.startsAt);
+      const existing = await prisma.eventInstance.findUnique({
+        where: { seriesId_startsAt: { seriesId, startsAt } },
+        select: { id: true },
+      });
 
-      await prisma.eventInstance.upsert({
-        where: { seriesId_startsAt: { seriesId, startsAt: new Date(occurrence.startsAt) } },
-        create: {
+      if (existing) {
+        // A date that already exists keeps the photo it was given. Re-deriving
+        // it from this loop's position was the bug: the position is a fact
+        // about this list, not about the table, so any date already there and
+        // not in this list kept a slot the loop then handed out a second time.
+        await prisma.eventInstance.update({
+          where: { id: existing.id },
+          data: {
+            endsAt: new Date(occurrence.endsAt),
+            localDate: occurrence.localDate,
+          },
+        });
+        continue;
+      }
+
+      // A new date draws the next slot off the series cursor, the single
+      // allocator for this series. Incrementing and reading back in one
+      // statement means a slot is spent the moment it is handed out.
+      const { coverCursor } = await prisma.eventSeries.update({
+        where: { id: seriesId },
+        data: { coverCursor: { increment: 1 } },
+        select: { coverCursor: true },
+      });
+      const slot = coverCursor - 1;
+
+      await prisma.eventInstance.create({
+        data: {
           seriesId,
-          startsAt: new Date(occurrence.startsAt),
+          startsAt,
           endsAt: new Date(occurrence.endsAt),
           localDate: occurrence.localDate,
-          coverImage,
+          coverIndex: slot,
+          coverImage: seriesImageAt(seriesId, slot),
         },
-        update: { coverImage },
       });
     }
   }
