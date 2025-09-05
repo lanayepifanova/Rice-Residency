@@ -40,6 +40,18 @@ async function upsertPerson(person: Person, membership: "resident" | "attendee")
         membership,
         houseLead: person.lead ?? false,
         ...(person.email ? { email: person.email } : {}),
+        // The directory headshot fills an empty slot, it does not replace a
+        // choice. Once someone uploads their own photo this stops touching it.
+        ...(person.photo && !existing.avatarUrl ? { avatarUrl: person.photo } : {}),
+        // Same rule for the words: what the public site says about someone
+        // stands in until they write their own, and then it stops.
+        ...(person.bio && !existing.bio ? { bio: person.bio } : {}),
+        ...(person.projectName && !existing.projectName
+          ? { projectName: person.projectName }
+          : {}),
+        ...(person.projectSummary && !existing.projectSummary
+          ? { projectSummary: person.projectSummary }
+          : {}),
       },
     });
 
@@ -54,6 +66,10 @@ async function upsertPerson(person: Person, membership: "resident" | "attendee")
       houseLead: person.lead ?? false,
       // Null rather than a placeholder: this person has no account yet.
       email: person.email ?? null,
+      avatarUrl: person.photo ?? null,
+      bio: person.bio ?? null,
+      projectName: person.projectName ?? null,
+      projectSummary: person.projectSummary ?? null,
     },
   });
 }

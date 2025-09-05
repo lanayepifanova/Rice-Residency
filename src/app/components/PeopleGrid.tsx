@@ -31,10 +31,12 @@ function PersonSquare({ person }: { person: Person }) {
 
       <span className="event-square-text">
         <h3>{person.name}</h3>
-        {/* What they are building, else where they are in school, else what the
-            house knows about them: whether they run it, live in it, or are one
-            of the people around it. */}
-        <p>{person.project ? person.project.name : (person.study ?? standing(person))}</p>
+        {/* Where they stand in the house — whether they run it, live in it, or
+            are one of the people around it. This used to lead with whatever
+            they were building, which made the directory read as a list of
+            projects and buried the one thing every card should agree on. The
+            project is on their own page, where there is room for it. */}
+        <p>{standing(person)}</p>
       </span>
     </>
   );

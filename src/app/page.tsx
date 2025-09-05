@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { displayName } from "@/lib/server/profile";
-import { attendingEvents, plannedSeries, seriesSchedules } from "@/lib/server/feed";
-import { EventSection, SeriesEvents } from "./components/EventGrid";
+import { seriesSchedules } from "@/lib/server/feed";
+import { SeriesEvents } from "./components/EventGrid";
 import { SideNav } from "./components/SideNav";
 import { SiteHeader } from "./components/SiteHeader";
 
@@ -11,43 +11,16 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const user = await getCurrentUser();
 
-  // A logged-out visitor still gets the public events; the personal section
-  // only exists once there is someone to personalise it for.
-  const [schedules, planned, attending] = await Promise.all([
-    seriesSchedules(),
-    plannedSeries(),
-    user ? attendingEvents(user.id) : Promise.resolve([]),
-  ]);
+  const schedules = await seriesSchedules();
 
   return (
     <>
       <SiteHeader />
       <SideNav />
       <main>
-        {planned.length ? (
-          <p className="banner-announcement" role="status">
-            We are working on the calendar for{" "}
-            {planned.map((series, index) => (
-              <span key={series.id}>
-                {index > 0 ? (index === planned.length - 1 ? " and " : ", ") : ""}
-                <strong>{series.title}</strong>
-              </span>
-            ))}
-            . Dates land here as soon as they are set.
-          </p>
-        ) : null}
-
         <h1 className="welcome-heading">
           {user ? `Welcome Back ${displayName(user)}` : "Find something to go to"}
         </h1>
-
-        {user ? (
-          <EventSection
-            title="You are going to"
-            events={attending}
-            empty={<>Nothing on your calendar yet. RSVP to an event and it shows up here.</>}
-          />
-        ) : null}
 
         {schedules.length ? (
           schedules.map((section) => (

@@ -144,6 +144,21 @@ main {
   text-decoration: none;
 }
 
+.site-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Sized off the name beside it, so the two stay in proportion if the header
+   type ever changes. The mark is square with its own padding baked in. */
+.site-logo {
+  display: block;
+  width: 2em;
+  height: 2em;
+  object-fit: contain;
+}
+
 .top-actions {
   display: flex;
   align-items: center;
@@ -256,24 +271,15 @@ main {
   margin-top: 32px;
 }
 
-.people-search {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 12px;
-  margin: 16px 0 24px;
-}
 
-.people-search .field {
-  flex: 1 1 260px;
-  margin: 0;
-}
 
 .person-monogram {
   display: grid;
   place-items: center;
   width: 100%;
-  height: 100%;
+  /* Matches the photo box, so a card with no photo is the same size as one
+     with a photo and the grid stays even. */
+  aspect-ratio: 1 / 1;
   background: #f0efe9;
   font-family: "Apple Chancery", "Snell Roundhand", "Brush Script MT", Georgia, serif;
   font-size: 64px;
@@ -335,35 +341,61 @@ main {
   font-size: 13px;
 }
 
+/* The whole page is this one line, so it sits in the middle of the space
+   rather than at the top left of an otherwise empty column. */
+.coming-soon {
+  display: grid;
+  place-items: center;
+  min-height: 50vh;
+  margin: 0;
+  font-size: 22px;
+}
+
 .event-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
 }
 
+/* Picture on top, caption underneath. The caption used to sit on top of the
+   photograph, which cost it the bottom strip — on a group shot that is where
+   the people are. Rows are `1fr auto` so every card in a row lines up. */
 .event-square {
   position: relative;
-  aspect-ratio: 1 / 1;
-  display: block;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid #000000;
   color: #000000;
   text-decoration: none;
+  background: #ffffff;
 }
 
-.event-square img,
+/* Square tiles, as on riceresidency.com, filled edge to edge. `cover` crops
+   whatever the square cannot take rather than leaving a band beside the
+   picture — a grid of filled squares reads better than a grid of letterboxes.
+   `center` keeps the crop on the middle of the frame, where the subject of
+   these photographs almost always is. */
+.event-square img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  object-position: center;
+  background: #f2f2f2;
+}
+
 .event-detail-image {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  background: #f2f2f2;
 }
 
 .event-square-text {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: grid;
   gap: 2px;
   background: #ffffff;
@@ -1207,16 +1239,35 @@ img.profile-image {
   font-variant-numeric: tabular-nums;
 }
 
-.standings-player {
+/* A player anywhere on the games pages: photo, name, whole thing clickable. */
+.player-chip {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
 }
 
-.standings-player .profile-image {
+a.player-chip:hover .player-chip-name,
+a.player-chip:focus-visible .player-chip-name {
+  text-decoration: underline;
+}
+
+.player-chip .profile-image {
+  /* The shared avatar rule carries a left margin for the sidebar; the chip
+     sets its own spacing with `gap`. */
+  margin-left: 0;
   width: 28px;
   height: 28px;
   font-size: 13px;
+}
+
+.player-chip-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 600px) {
@@ -1314,26 +1365,14 @@ img.profile-image {
 
 .night-score {
   display: grid;
-  /* Avatar, name over bar, then the count — so every row's number lines up
+  /* Player, then the bar, then the count — so every row's number lines up
      down the right edge however long the names are. */
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
 }
 
-.night-score .profile-image {
-  width: 28px;
-  height: 28px;
-  font-size: 13px;
-}
-
-.night-score-body {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-}
-
-.night-score-name {
+.night-score-player {
   font-size: 14px;
 }
 

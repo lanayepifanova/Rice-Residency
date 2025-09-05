@@ -233,6 +233,13 @@ export async function seriesSchedules(take = SCHEDULE_DATES): Promise<SeriesSect
   }));
 }
 
+/**
+ * The archive starts here. Dates before this ran while the house was still
+ * being set up and are not kept: the archive is the record from this point on,
+ * so until the first date after it has passed there is simply nothing to show.
+ */
+export const ARCHIVE_FROM = new Date("2026-08-30T00:00:00.000Z");
+
 /** Dates that have already happened, newest first, grouped by series. */
 export async function archivedSeries(take = 24): Promise<SeriesSection[]> {
   const now = new Date();
@@ -241,7 +248,7 @@ export async function archivedSeries(take = 24): Promise<SeriesSection[]> {
     where: { visibility: "public" },
     include: {
       instances: {
-        where: { startsAt: { lt: now } },
+        where: { startsAt: { lt: now, gte: ARCHIVE_FROM } },
         orderBy: { startsAt: "desc" },
         take,
       },

@@ -63,24 +63,8 @@ function toPerson(user: User): Person {
  * Residents and attendees come back in one list. Splitting them is the calling
  * page's job, so a search can still say how many of each it matched.
  */
-export async function listPeople(query?: string): Promise<Person[]> {
-  const term = query?.trim();
-
+export async function listPeople(): Promise<Person[]> {
   const users = await prisma.user.findMany({
-    where: term
-      ? {
-          OR: [
-            { name: { contains: term, mode: "insensitive" } },
-            { username: { contains: term, mode: "insensitive" } },
-            { bio: { contains: term, mode: "insensitive" } },
-            { projectName: { contains: term, mode: "insensitive" } },
-            { projectSummary: { contains: term, mode: "insensitive" } },
-            { pastProjects: { contains: term, mode: "insensitive" } },
-            { helpNeeded: { contains: term, mode: "insensitive" } },
-            { major: { contains: term, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
     orderBy: [{ name: "asc" }, { email: "asc" }],
   });
 

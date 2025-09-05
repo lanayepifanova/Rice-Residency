@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
+/* eslint-disable @next/next/no-img-element */
 
 import { getCurrentUser } from "@/lib/auth";
 import { displayName } from "@/lib/server/profile";
@@ -9,6 +10,8 @@ export async function SiteHeader() {
   return (
     <header className="site-header">
       <a className="site-name" href="/">
+        {/* Decorative: the wordmark beside it already says the name. */}
+        <img className="site-logo" src="/rice-residency-logo.png" alt="" />
         Rice Residency
       </a>
 

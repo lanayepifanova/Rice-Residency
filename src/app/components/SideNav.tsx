@@ -9,8 +9,12 @@ import { signOut } from "../login/actions";
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/explore", label: "People", icon: ExploreIcon },
-  { href: "/archive", label: "Archive", icon: ArchiveIcon },
   { href: "/games", label: "Games", icon: GamesIcon },
+  // The two standing series get their own entries: they are what the house runs,
+  // so they are worth a click from anywhere rather than a scroll down the home page.
+  { href: "/events/seed_friday-house-party", label: "Parties", icon: PartiesIcon },
+  { href: "/events/seed_vc-networking-dinner", label: "Dinners", icon: DinnersIcon },
+  { href: "/archive", label: "Archive", icon: ArchiveIcon },
   { href: "/events/new", label: "Create", icon: CreateIcon },
   { href: "/notifications", label: "Notifications", icon: NotificationsIcon },
 ];
@@ -84,8 +88,11 @@ function HomeIcon() {
 function ExploreIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="12" cy="12" r="8" />
-      <path d="m14.5 9.5-2 5-3 1 2-5z" />
+      {/* Two people: one forward, one half behind. */}
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+      <circle cx="16.5" cy="9" r="2.4" />
+      <path d="M15 14.2a4.6 4.6 0 0 1 5.5 4.8" />
     </svg>
   );
 }
@@ -102,6 +109,26 @@ function CreateIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function PartiesIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {/* A party popper: cone plus the bits coming out of it. */}
+      <path d="M4 20l5-11 6 6z" />
+      <path d="M14 4v2M18 6l-1.4 1.4M20 10h-2" />
+    </svg>
+  );
+}
+
+function DinnersIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {/* Fork and knife. */}
+      <path d="M7 3v7a2 2 0 0 0 4 0V3M9 10v11" />
+      <path d="M16 3c2 1.5 2 5 0 6.5V21" />
     </svg>
   );
 }

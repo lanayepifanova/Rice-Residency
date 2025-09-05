@@ -170,12 +170,10 @@ export const sittings: Sitting[] = [
     ],
   },
   {
-    // The source for this night names no game. Its numbered-round format is the
-    // one every Cambio sitting uses, and unlike them Chinese Poker is recorded
-    // as matchups, so it is filed here as Cambio. Worth correcting if wrong.
+    // The source for this night names no game. Confirmed since as Cambio, which
+    // its numbered-round format already pointed to.
     game: "cambio",
     playedOn: "2026-07-30",
-    note: "Game not stated in the source; assumed Cambio from the round format.",
     rounds: [
       { won: ["chris"] },
       { won: ["lana"] },

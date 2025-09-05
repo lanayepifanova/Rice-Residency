@@ -19,25 +19,74 @@ export type Person = {
   username?: string;
   /** Runs the house. Residents only — set on the two people who do. */
   lead?: true;
+  /**
+   * Directory headshot under `public/people`, taken from the public site at
+   * riceresidency.com. This is the house's photo of a person, not their own:
+   * the seed only applies it to someone who has not set a photo themselves.
+   */
+  photo?: string;
+  /**
+   * What riceresidency.com says about someone. Same rule as `photo`: this is
+   * the house's copy, and the seed defers to anything the person wrote for
+   * themselves rather than overwriting it.
+   */
+  bio?: string;
+  projectName?: string;
+  projectSummary?: string;
 };
 
 /** Lives at Rice Residency. */
 export const residents: Person[] = [
-  { name: "Lana Yepifanova", username: "lana", email: "lana@example.com", lead: true },
-  { name: "Halbert Kim" },
-  { name: "Jun Lee" },
-  { name: "Adam Towner" },
-  { name: "Catherine Zhou", lead: true },
-  { name: "Gavin Firestone" },
-  { name: "Howard Zhao" },
-  { name: "Jocelyn Lass" },
-  { name: "Manuel Ponce" },
-  { name: "Nathan Kwon" },
-  { name: "Nolan Connolly" },
-  { name: "Saul Brauns" },
+  { name: "Lana Yepifanova", username: "lana", email: "lana@example.com", lead: true, photo: "/people/lana-yepifanova.jpg" },
+  { name: "Halbert Kim", photo: "/people/halbert-kim.png" },
+  { name: "Jun Lee", photo: "/people/jun-lee.png" },
+  { name: "Adam Towner", photo: "/people/adam-towner.png" },
+  { name: "Catherine Zhou", lead: true, photo: "/people/catherine-zhou.png" },
+  { name: "Gavin Firestone", photo: "/people/gavin-firestone.jpg" },
+  { name: "Howard Zhao", photo: "/people/howard-zhao.png" },
+  { name: "Jocelyn Lass", photo: "/people/jocelyn-lass.png" },
+  { name: "Manuel Ponce", photo: "/people/manuel-ponce.png" },
+  { name: "Nathan Kwon", photo: "/people/nathan-kwon.jpg" },
+  { name: "Nolan Connolly", photo: "/people/nolan-connolly.jpg" },
+  { name: "Saul Brauns", photo: "/people/saul-brauns.png" },
   // Listed in the coworking export only as tangsc@stanford.edu, confirmed as
   // Chris Tang — the same Chris who appears throughout the card-game results.
-  { name: "Chris Tang", email: "tangsc@stanford.edu" },
+  { name: "Chris Tang", email: "tangsc@stanford.edu", photo: "/people/christopher-tang.png" },
+  {
+    name: "Arnav Bhalla",
+    photo: "/people/arnav-bhalla.png",
+    projectName: "Navio",
+    projectSummary: "EEG-based focus tools and an AI academic planner.",
+    bio: "Arnav is building EEG-based neurofeedback tools for focus and stress regulation, and Navio, an AI academic planner. He assembles Class III neurostimulation implants at Motif Neurotech, conducts robotics research at Rice's Neuroengineering Initiative, and interns at MD Anderson Cancer Center applying machine learning to pancreatic cancer diagnostics.",
+  },
+  {
+    name: "Adithiya Balaguru",
+    photo: "/people/adithiya-balaguru.png",
+    projectName: "Coop",
+    projectSummary: "AI sensors for early respiratory disease in poultry.",
+    bio: "Adithiya is building Coop, an AI sensor system for early respiratory disease detection in industrial poultry barns. He researched satellite imagery models with the National Geospatial-Intelligence Agency under the DoD, built a suicide risk prediction model at George Mason University's Center for Evidence Based Behavior Health, and co-founded Connected Crosswalk Assistance, a smart walking cane for the visually impaired.",
+  },
+  {
+    name: "Aruna Gauba",
+    photo: "/people/aruna-gauba.jpg",
+    projectName: "Mycelium",
+    projectSummary: "Sustainable materials and AI-driven indoor farming.",
+    bio: "Aruna is building a mycelium business in sustainable materials and integrating AI into smart indoor farming, while working for cybersecurity startup Dropzone AI. She was first author on AgMMU presented at NeurIPS 2025, co-authored a computational genomics paper, and wrote and sold ~1,000 copies of a book on cheetah conservation that raised over $10,000.",
+  },
+  {
+    name: "Ramtin Shahzanian",
+    photo: "/people/ramtin-shahzanian.png",
+    projectName: "Stealth AI Startup",
+    projectSummary: "Agentic memory infrastructure.",
+    bio: "Ramtin is an AI student at Rice University working on agentic memory infrastructure through a stealth AI startup. His background spans applied machine learning projects including generative AI and computer vision systems.",
+  },
+  {
+    name: "Stella Chen",
+    photo: "/people/stella-chen.jpg",
+    projectName: "Lookbook",
+    projectSummary: "Share and rank clothing brands with friends.",
+    bio: "Stella is building a mobile app where users share and rank clothing brands with friends. She previously interned at NASA on the Moon Exploration team, and co-founded the Maroon Project, which distributed 12,000+ period products to homeless women in Seattle and won 1st place globally at Destination Imagination.",
+  },
 ];
 
 /**
@@ -77,6 +126,7 @@ export const attendees: Person[] = [
   { name: "Ioan-Alexandru Mirica" },
   { name: "Ishaan Sinha" },
   { name: "Jack Lu" },
+  { name: "Jake Renda" },
   { name: "Jeffery Liu" },
   { name: "Jiong Li" },
   { name: "Kaitlyn Kirt" },
@@ -100,7 +150,6 @@ export const attendees: Person[] = [
   { name: "Sanjana Kavula" },
   { name: "Sathya Padmanabhan" },
   { name: "Siiri Einio" },
-  { name: "Stella Chen" },
   { name: "Tony Nguyen" },
   { name: "Vismay Ravikumar" },
   { name: "Yash Bali" },

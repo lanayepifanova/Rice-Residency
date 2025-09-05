@@ -19,6 +19,8 @@ export type Standing = {
   name: string;
   /** Their profile, when the player has a house account. */
   href: string | null;
+  /** Their photo, when they have one. The initial stands in when they do not. */
+  avatarUrl: string | null;
   initial: string;
   points: number;
   /** Nights they took at least one round. */
@@ -70,6 +72,7 @@ export async function listGameStandings(): Promise<GameStandings[]> {
           userId: score.userId,
           name: displayName(score.user),
           href: score.user.username ? `/people/${score.user.username}` : null,
+          avatarUrl: score.user.avatarUrl,
           initial: avatarInitial(score.user),
           points: score.points,
           nights: 1,
@@ -131,6 +134,7 @@ export type NightScore = {
   userId: string;
   name: string;
   href: string | null;
+  avatarUrl: string | null;
   initial: string;
   points: number;
   /** Points over the rounds played that night, 0–1. */
@@ -182,6 +186,7 @@ export async function listGameNights(slug?: string): Promise<GameNight[]> {
         userId: score.userId,
         name: displayName(score.user),
         href: score.user.username ? `/people/${score.user.username}` : null,
+        avatarUrl: score.user.avatarUrl,
         initial: avatarInitial(score.user),
         points: score.points,
         share: session.rounds > 0 ? score.points / session.rounds : 0,
