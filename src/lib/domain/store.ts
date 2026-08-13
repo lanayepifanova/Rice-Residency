@@ -5,6 +5,7 @@ export type StoredEventSeries = {
   organizerId: string;
   title: string;
   description?: string;
+  coverImage?: string;
   locationName?: string;
   locationUrl?: string;
   timezone: string;

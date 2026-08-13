@@ -32,6 +32,13 @@ main {
   padding: 32px 0;
 }
 
+.welcome-heading {
+  font-family: "Apple Chancery", "Snell Roundhand", "Brush Script MT", "Bookman Old Style", Georgia, serif;
+  font-size: clamp(32px, 4.6vw, 48px);
+  font-weight: 700;
+  line-height: 1.05;
+}
+
 .side-nav {
   position: fixed;
   left: 0;
@@ -143,8 +150,14 @@ main {
 }
 
 .create-link {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
   border: 1px solid #000000;
-  padding: 8px 12px;
+  background-image: linear-gradient(rgb(255 255 255 / 35%), rgb(255 255 255 / 35%)), url("/photos/ui/create-button.jpeg");
+  background-position: center;
+  background-size: cover;
+  padding: 0 12px;
 }
 
 .menu {
@@ -158,7 +171,12 @@ main {
   cursor: pointer;
   list-style: none;
   place-items: center;
+  align-content: center;
+  gap: 3px;
   border: 1px solid #000000;
+  background-image: linear-gradient(rgb(255 255 255 / 35%), rgb(255 255 255 / 35%)), url("/photos/ui/menu-button.jpeg");
+  background-position: center;
+  background-size: cover;
 }
 
 .menu summary::-webkit-details-marker {
@@ -192,8 +210,21 @@ main {
   text-decoration: none;
 }
 
+.profile-card {
+  min-height: 96px;
+  align-content: end;
+  background-image: linear-gradient(rgb(255 255 255 / 35%), rgb(255 255 255 / 35%)), url("/photos/ui/profile-card.jpeg");
+  background-position: center;
+  background-size: cover;
+}
+
 .new-event-card {
   margin-top: 12px;
+  min-height: 96px;
+  align-content: end;
+  background-image: linear-gradient(rgb(255 255 255 / 35%), rgb(255 255 255 / 35%)), url("/photos/ui/new-event-card.jpeg");
+  background-position: center;
+  background-size: cover;
   color: #000000;
   text-decoration: none;
 }
@@ -231,19 +262,84 @@ main {
 }
 
 .event-square {
+  position: relative;
   aspect-ratio: 1 / 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  display: block;
+  overflow: hidden;
   border: 1px solid #000000;
   color: #000000;
-  padding: 12px;
   text-decoration: none;
+}
+
+.event-square img,
+.event-detail-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.event-square-text {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  gap: 2px;
+  background: #ffffff;
+  border-top: 1px solid #000000;
+  padding: 8px;
 }
 
 .event-square h3,
 .event-square p {
   margin: 0;
+}
+
+.event-square p,
+.event-meta {
+  color: #666666;
+  font-size: 13px;
+}
+
+.event-square h3,
+.event-detail-info h1 {
+  font-family: "Apple Chancery", "Snell Roundhand", "Brush Script MT", "Bookman Old Style", Georgia, serif;
+  font-weight: 700;
+}
+
+.event-detail-image {
+  aspect-ratio: 1 / 1;
+  border: 1px solid #000000;
+}
+
+.event-detail-main {
+  width: min(1100px, calc(100vw - 220px));
+}
+
+.event-detail {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.event-detail-info h1 {
+  margin-top: 0;
+}
+
+@media (max-width: 760px) {
+  .event-detail-main {
+    width: min(720px, calc(100vw - 88px));
+  }
+
+  .event-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .event-detail-image {
+    max-height: 50vh;
+  }
 }
 
 a {
@@ -263,12 +359,12 @@ form {
 
 fieldset {
   margin: 0;
-  padding: 16px;
-  border: 1px solid #000000;
+  padding: 0;
+  border: 0;
 }
 
 legend {
-  padding: 0 6px;
+  padding: 0;
   font-weight: 700;
 }
 
@@ -287,6 +383,35 @@ button {
 
 textarea {
   min-height: 96px;
+}
+
+.create-event-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border: 1px solid #000000;
+  object-fit: cover;
+}
+
+.create-event-main {
+  width: min(1100px, calc(100vw - 220px));
+}
+
+.create-event-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 420px);
+  gap: 32px;
+  align-items: start;
+}
+
+.create-event-fields {
+  display: grid;
+  gap: 24px;
+}
+
+.create-event-photo-panel {
+  position: sticky;
+  top: 88px;
 }
 
 button {
@@ -309,6 +434,11 @@ button {
   gap: 24px;
 }
 
+.profile-photo-upload {
+  width: fit-content;
+  cursor: pointer;
+}
+
 .profile-photo-large {
   display: grid;
   width: 96px;
@@ -320,7 +450,33 @@ button {
   font-weight: 700;
 }
 
+.profile-photo-upload input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  clip-path: inset(50%);
+}
+
 @media (max-width: 760px) {
+  .create-event-main {
+    width: min(720px, calc(100vw - 88px));
+  }
+
+  .create-event-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .create-event-photo-panel {
+    position: static;
+    order: -1;
+  }
+
+  .create-event-photo {
+    max-height: 50vh;
+  }
+
   body {
     padding-left: 56px;
   }

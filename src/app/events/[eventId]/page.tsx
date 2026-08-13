@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+
 import { notFound } from "next/navigation";
 import { SideNav } from "../../components/SideNav";
 import { SiteHeader } from "../../components/SiteHeader";
@@ -15,14 +17,22 @@ export default async function EventPage({ params }: { params: Promise<{ eventId:
     <>
       <SiteHeader />
       <SideNav />
-      <main>
-        <h1>{event.title}</h1>
-        <p>{event.meta}</p>
+      <main className="event-detail-main">
+        <article className="event-detail">
+          <section className="event-detail-info">
+            <h1>{event.title}</h1>
+            <p className="event-meta">{event.meta.toLowerCase()}</p>
+            <p>Hosted by {event.host}</p>
+            <p>{event.description}</p>
 
-        <section>
-          <h2>Event</h2>
-          <p>{event.group}</p>
-        </section>
+            <section>
+              <h2>Event</h2>
+              <p>{event.group}</p>
+            </section>
+          </section>
+
+          <img className="event-detail-image" src={event.image} alt="" />
+        </article>
       </main>
     </>
   );

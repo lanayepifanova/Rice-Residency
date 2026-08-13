@@ -1,3 +1,5 @@
+/* eslint-disable @next/next/no-img-element */
+
 import { SiteHeader } from "./components/SiteHeader";
 import { SideNav } from "./components/SideNav";
 import { demoEvents } from "@/lib/domain/demo-events";
@@ -24,7 +26,7 @@ export default function Home() {
       <SiteHeader />
       <SideNav />
       <main>
-        <h1>Welcome Back {currentUser.firstName}</h1>
+        <h1 className="welcome-heading">Welcome Back {currentUser.firstName}</h1>
 
         {eventGroups.map((group) => (
           <section className="event-section" key={group.title}>
@@ -34,8 +36,11 @@ export default function Home() {
                 .filter((event) => event.group === group.title)
                 .map((event) => (
                   <a className="event-square" href={`/events/${event.id}`} key={event.id}>
-                    <h3>{event.title}</h3>
-                    <p>{event.meta}</p>
+                    <img src={event.image} alt="" />
+                    <span className="event-square-text">
+                      <h3>{event.title}</h3>
+                      <p>{event.meta.toLowerCase()}</p>
+                    </span>
                   </a>
                 ))}
             </div>

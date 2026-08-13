@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     status: "active" as const,
     title: parsed.data.title,
     description: parsed.data.description,
+    coverImage: parsed.data.coverImage,
     locationName: parsed.data.locationName,
     locationUrl: parsed.data.locationUrl,
     timezone: parsed.data.timezone,
@@ -91,12 +92,14 @@ async function readCreateSeriesBody(request: Request): Promise<unknown> {
   const capacityValue = stringValue(formData.get("capacity"));
   const untilValue = stringValue(formData.get("until"));
   const description = stringValue(formData.get("description"));
+  const coverImage = stringValue(formData.get("coverImage"));
   const locationName = stringValue(formData.get("locationName"));
   const inviteEmails = parseEmailList(stringValue(formData.get("inviteEmails")));
 
   return {
     title: stringValue(formData.get("title")),
     description: description || undefined,
+    coverImage: coverImage || undefined,
     locationName: locationName || undefined,
     timezone: stringValue(formData.get("timezone")),
     startsAtLocal: stringValue(formData.get("startsAtLocal")),

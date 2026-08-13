@@ -17,6 +17,7 @@ export const recurrenceSchema = z.object({
 export const eventSeriesCreateSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().trim().max(2_000).optional(),
+  coverImage: z.string().trim().min(1).optional(),
   locationName: z.string().trim().max(160).optional(),
   locationUrl: z.string().url().optional(),
   timezone: z.string().trim().min(1),

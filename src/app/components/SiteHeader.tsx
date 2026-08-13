@@ -22,7 +22,7 @@ export function SiteHeader() {
           <div className="menu-panel">
             <a className="profile-card" href="/profile">
               <strong>Your profile</strong>
-              <span>@founder</span>
+              <span>@lanayepifanova</span>
             </a>
 
             <a className="new-event-card" href="/events/new">
