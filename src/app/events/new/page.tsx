@@ -1,23 +1,16 @@
-/* eslint-disable @next/next/no-img-element */
-
 import { randomInt } from "crypto";
 import { eventImagePool } from "@/lib/domain/event-images";
+import { requireUser } from "@/lib/auth";
 import { SideNav } from "../../components/SideNav";
 import { SiteHeader } from "../../components/SiteHeader";
+import { CreateEventForm } from "./create-event-form";
 
 export const dynamic = "force-dynamic";
 
-const weekdays = [
-  ["MO", "Monday"],
-  ["TU", "Tuesday"],
-  ["WE", "Wednesday"],
-  ["TH", "Thursday"],
-  ["FR", "Friday"],
-  ["SA", "Saturday"],
-  ["SU", "Sunday"],
-];
+export default async function NewEventPage() {
+  // Only signed-in users can host. Sends them to login and back here after.
+  await requireUser("/events/new");
 
-export default function NewEventPage() {
   const coverImage = eventImagePool[randomInt(eventImagePool.length)];
 
   return (
@@ -25,110 +18,8 @@ export default function NewEventPage() {
       <SiteHeader />
       <SideNav />
       <main className="create-event-main">
-        <form method="post" action="/api/event-series">
-          <div className="create-event-layout">
-            <div className="create-event-fields">
-              <fieldset>
-                <legend>Event</legend>
-
-                <label>
-                  Title
-                  <input name="title" defaultValue="Weekly Run Club" required />
-                </label>
-
-                <label>
-                  Location
-                  <input name="locationName" defaultValue="Riverside Park" />
-                </label>
-
-                <label>
-                  Invites
-                  <textarea name="inviteEmails" placeholder="maya@example.com, jordan@example.com&#10;sam@example.com" />
-                </label>
-
-                <label>
-                  Capacity
-                  <input name="capacity" type="number" min="1" defaultValue="20" />
-                </label>
-
-                <label>
-                  Description
-                  <textarea name="description" defaultValue="Meet by the park entrance." />
-                </label>
-              </fieldset>
-
-              <fieldset>
-                <legend>Schedule</legend>
-
-                <label>
-                  Timezone
-                  <input name="timezone" defaultValue="America/New_York" required />
-                </label>
-
-                <label>
-                  Starts
-                  <input name="startsAtLocal" type="datetime-local" defaultValue="2026-09-07T18:30" required />
-                </label>
-
-                <label>
-                  Duration minutes
-                  <input name="durationMinutes" type="number" min="1" defaultValue="60" required />
-                </label>
-              </fieldset>
-
-              <fieldset>
-                <legend>Recurrence</legend>
-
-                <label>
-                  Frequency
-                  <select name="freq" defaultValue="weekly">
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="yearly">Yearly</option>
-                  </select>
-                </label>
-
-                <label>
-                  Interval
-                  <input name="interval" type="number" min="1" defaultValue="1" required />
-                </label>
-
-                <div>
-                  <p>Weekdays</p>
-                  {weekdays.map(([value, label]) => (
-                    <label key={value} className="inline-label">
-                      <input name="byDay" type="checkbox" value={value} defaultChecked={value === "MO"} />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-
-                <label>
-                  Until
-                  <input name="until" type="datetime-local" />
-                </label>
-              </fieldset>
-
-              <fieldset>
-                <legend>Attendance</legend>
-
-                <label className="inline-label">
-                  <input name="waitlistEnabled" type="checkbox" defaultChecked />
-                  Waitlist enabled
-                </label>
-              </fieldset>
-            </div>
-
-            <aside className="create-event-photo-panel">
-              <img className="create-event-photo" src={coverImage} alt="" />
-              <input name="coverImage" type="hidden" value={coverImage} />
-            </aside>
-          </div>
-
-          <input name="visibility" type="hidden" value="public" />
-          <button type="submit">Create event</button>
-        </form>
+        <h1>New event</h1>
+        <CreateEventForm coverImage={coverImage} defaultTimezone="America/New_York" />
       </main>
     </>
   );

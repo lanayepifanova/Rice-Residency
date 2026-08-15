@@ -43,7 +43,7 @@ describe("applyRsvp", () => {
         waitlistEnabled: false,
         existingRsvps: [{ userId: "user_2", status: "going", guestCount: 0 }],
       }),
-    ).toThrow("This event is full.");
+    ).toThrow("This event is full and the waitlist is turned off.");
   });
 
   it("does not consume capacity for maybe or busy", () => {

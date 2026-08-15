@@ -31,6 +31,7 @@ enum RsvpStatus {
 
 enum NotificationEventType {
   event_series_created
+  user_invited
   share_opened
   rsvp_changed
   capacity_reached
@@ -57,10 +58,25 @@ enum NotificationDeliveryStatus {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  name      String
-  email     String?  @unique
+  /// Mirrors Supabase `auth.users.id` (a UUID). Not generated here: the row is
+  /// created on first sign-in using the id Supabase already issued, so a
+  /// session gives you the app user id without a second lookup.
+  id        String   @id
+  /// Always present — magic-link sign-in is keyed on email.
+  email     String   @unique
+  /// Unknown at sign-up; the user sets it on their profile afterwards.
+  name      String?
+  /// Public handle. Unique when set, but optional so sign-in never blocks on it.
+  username  String?  @unique
   phone     String?
+  /// Public URL of the avatar in the Supabase `avatars` storage bucket.
+  avatarUrl String?
+  bio       String?
+  instagram String?
+  twitter   String?
+  /// Date only. Stored as a string so a timezone can never shift someone's
+  /// birthday across a day boundary.
+  birthday  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -68,32 +84,48 @@ model User {
   rsvps                  EventRsvp[]
   notificationPreference NotificationPreference?
   notificationDeliveries NotificationDelivery[]
+  notificationsActed     NotificationEvent[]     @relation("NotificationActor")
+  invitesSent            EventInvite[]           @relation("InviteSender")
+  invitesAccepted        EventInvite[]           @relation("InviteRecipient")
+  shareLinksCreated      EventShareLink[]
 }
 
 model EventSeries {
-  id              String            @id @default(cuid())
-  organizerId     String
-  title           String
-  description     String?
-  locationName    String?
-  locationUrl     String?
-  timezone        String
-  startsAtLocal   DateTime
+  id           String  @id @default(cuid())
+  organizerId  String
+  title        String
+  description  String?
+  coverImage   String?
+  locationName String?
+  locationUrl  String?
+  timezone     String
+
+  /// Wall-clock local start, e.g. "2026-09-07T18:30". Deliberately a string:
+  /// a timestamp column would force a UTC interpretation, and the whole point
+  /// of a recurring series is that "18:30 in America/New_York" stays 18:30
+  /// even when the UTC offset changes at a DST boundary.
+  startsAtLocal   String
   durationMinutes Int
   capacity        Int?
-  waitlistEnabled Boolean           @default(true)
-  visibility      EventVisibility   @default(public)
+  waitlistEnabled Boolean         @default(true)
+  visibility      EventVisibility @default(public)
+
   recurrenceRule  Json
   recurrenceUntil DateTime?
   recurrenceCount Int?
-  maxHorizonYears Int               @default(10)
-  status          EventSeriesStatus @default(active)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  maxHorizonYears Int       @default(10)
+  /// How far ahead instances have been generated. Materialization is a rolling
+  /// window, so this marks where the next top-up should resume.
+  materializedThrough DateTime?
+
+  status    EventSeriesStatus @default(active)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   organizer          User                @relation(fields: [organizerId], references: [id], onDelete: Cascade)
   instances          EventInstance[]
   shareLinks         EventShareLink[]
+  invites            EventInvite[]
   notificationEvents NotificationEvent[]
 
   @@index([organizerId])
@@ -101,54 +133,96 @@ model EventSeries {
 }
 
 model EventInstance {
-  id             String              @id @default(cuid())
-  seriesId       String
-  startsAt       DateTime
-  endsAt         DateTime
-  localDate      String
-  status         EventInstanceStatus @default(scheduled)
-  overrideFields Json?
-  ruleVersion    Int                 @default(1)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
+  id        String   @id @default(cuid())
+  seriesId  String
+  startsAt  DateTime
+  endsAt    DateTime
+  localDate String
+
+  status EventInstanceStatus @default(scheduled)
+
+  /// Single-occurrence overrides. Null means "inherit from the series", which
+  /// is why these are separate nullable columns rather than a JSON blob: an
+  /// override that is set to empty string is meaningfully different from one
+  /// that was never set, and both stay queryable.
+  overrideTitle        String?
+  overrideDescription  String?
+  overrideLocationName String?
+
+  ruleVersion Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   series             EventSeries         @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   rsvps              EventRsvp[]
   shareLinks         EventShareLink[]
   notificationEvents NotificationEvent[]
 
+  /// Makes materialization idempotent: re-running the generator for a series
+  /// can never produce a duplicate occurrence at the same instant.
+  @@unique([seriesId, startsAt])
   @@index([seriesId, startsAt])
   @@index([status])
+  @@index([startsAt])
 }
 
 model EventRsvp {
-  id           String     @id @default(cuid())
-  instanceId   String
-  userId       String
-  status       RsvpStatus
-  guestCount   Int        @default(0)
-  partySize    Int        @default(1)
+  id         String     @id @default(cuid())
+  instanceId String
+  userId     String
+  status     RsvpStatus
+  guestCount Int        @default(0)
+  /// Seats consumed: `1 + guestCount` for `going`, otherwise 0. Denormalised so
+  /// capacity can be summed in the database instead of in application code.
+  partySize    Int      @default(0)
   waitlistRank Int?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   instance EventInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
   user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([instanceId, userId])
   @@index([instanceId, status])
+  @@index([userId])
 }
 
 model EventShareLink {
-  id         String    @id @default(cuid())
-  token      String    @unique
-  seriesId   String?
-  instanceId String?
-  createdAt  DateTime  @default(now())
-  revokedAt  DateTime?
+  id           String    @id @default(cuid())
+  token        String    @unique
+  seriesId     String?
+  instanceId   String?
+  createdById  String?
+  openCount    Int       @default(0)
+  lastOpenedAt DateTime?
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
 
-  series   EventSeries?   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-  instance EventInstance? @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  series    EventSeries?   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  instance  EventInstance? @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  createdBy User?          @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([seriesId])
+  @@index([instanceId])
+}
+
+model EventInvite {
+  id                String   @id @default(cuid())
+  seriesId          String
+  /// Invites are addressed to an email because the recipient usually has no
+  /// account yet. `acceptedByUserId` links it up once they sign in.
+  email             String
+  invitedById       String?
+  acceptedByUserId  String?
+  acceptedAt        DateTime?
+  createdAt         DateTime @default(now())
+
+  series         EventSeries @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  invitedBy      User?       @relation("InviteSender", fields: [invitedById], references: [id], onDelete: SetNull)
+  acceptedByUser User?       @relation("InviteRecipient", fields: [acceptedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([seriesId, email])
+  @@index([email])
 }
 
 model NotificationEvent {
@@ -157,11 +231,16 @@ model NotificationEvent {
   seriesId   String?
   instanceId String?
   actorId    String?
+  /// Stable identity for an event that must only ever happen once, e.g.
+  /// "capacity_reached:<instanceId>". Unique, so a duplicate insert is
+  /// rejected by the database rather than by a racy pre-check.
+  dedupeKey  String?               @unique
   payload    Json
   createdAt  DateTime              @default(now())
 
   series     EventSeries?           @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   instance   EventInstance?         @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+  actor      User?                  @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
   deliveries NotificationDelivery[]
 
   @@index([type, createdAt])
@@ -175,6 +254,9 @@ model NotificationDelivery {
   status              NotificationDeliveryStatus @default(pending)
   attempts            Int                        @default(0)
   lastError           String?
+  sentAt              DateTime?
+  /// In-app only: when the recipient saw it. Drives the unread badge.
+  readAt              DateTime?
   createdAt           DateTime                   @default(now())
   updatedAt           DateTime                   @updatedAt
 
@@ -183,6 +265,7 @@ model NotificationDelivery {
 
   @@unique([notificationEventId, userId, channel])
   @@index([status, createdAt])
+  @@index([userId, channel, readAt])
 }
 
 model NotificationPreference {

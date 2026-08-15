@@ -1,6 +1,13 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 
-export function SiteHeader() {
+import { getCurrentUser } from "@/lib/auth";
+import { unreadCount } from "@/lib/server/notifications";
+import { displayName } from "@/lib/server/profile";
+
+export async function SiteHeader() {
+  const user = await getCurrentUser();
+  const unread = user ? await unreadCount(user.id) : 0;
+
   return (
     <header className="site-header">
       <a className="site-name" href="/">
@@ -20,35 +27,43 @@ export function SiteHeader() {
           </summary>
 
           <div className="menu-panel">
-            <a className="profile-card" href="/profile">
-              <strong>Your profile</strong>
-              <span>@lanayepifanova</span>
-            </a>
+            {user ? (
+              <a className="profile-card" href="/profile">
+                <strong>Your profile</strong>
+                <span>{user.username ? `@${user.username}` : displayName(user)}</span>
+              </a>
+            ) : (
+              <a className="profile-card" href="/login">
+                <strong>Sign in</strong>
+                <span>Magic link, no password</span>
+              </a>
+            )}
 
             <a className="new-event-card" href="/events/new">
               <strong>+ New event</strong>
               <span>Create a recurring event</span>
             </a>
 
+            {/* Every link here resolves to a page that exists. Entries for
+                features this product does not have were removed rather than
+                left pointing at nothing. */}
             <ul>
               <li>
-                <a href="/messages">Messages</a>
+                <a href="/explore">Explore</a>
               </li>
               <li>
-                <a href="/mutuals">Mutuals</a>
-              </li>
-              <li>
-                <a href="/feedback">Feedback</a>
-              </li>
-              <li>
-                <a href="/help">Help center</a>
+                <a href="/notifications">
+                  Notifications{unread > 0 ? ` (${unread})` : ""}
+                </a>
               </li>
               <li>
                 <a href="/settings/profile">Profile settings</a>
               </li>
-              <li>
-                <a href="/logout">Log out</a>
-              </li>
+              {user ? (
+                <li>
+                  <a href="/logout">Log out</a>
+                </li>
+              ) : null}
             </ul>
           </div>
         </details>

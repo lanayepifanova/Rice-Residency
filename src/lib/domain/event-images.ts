@@ -32,6 +32,24 @@ export const eventImagePool = [
   "/photos/event-images/image-31.jpeg",
 ];
 
+/**
+ * The cover for a series that has none of its own. Derived from the series id
+ * so the same event always shows the same picture — a random pick per render
+ * would make the grid flicker on every navigation.
+ */
+export function coverImageFor(seriesId: string, explicit?: string | null): string {
+  if (explicit) {
+    return explicit;
+  }
+
+  let hash = 0;
+  for (let index = 0; index < seriesId.length; index += 1) {
+    hash = (hash * 31 + seriesId.charCodeAt(index)) % 2147483647;
+  }
+
+  return eventImagePool[hash % eventImagePool.length];
+}
+
 export function assignEventImages<T>(items: T[]): Array<T & { image: string }> {
   const shuffledImages = shuffleWithSeed(eventImagePool, 1729);
 

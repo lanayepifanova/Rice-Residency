@@ -1,23 +1,39 @@
+/* eslint-disable @next/next/no-img-element */
+
+import { getCurrentUser } from "@/lib/auth";
+import { unreadCount } from "@/lib/server/notifications";
+import { avatarInitial } from "@/lib/server/profile";
+import { signOut } from "../login/actions";
+
+// Messages and mutuals were removed: they were links to pages this product does
+// not have. Everything listed here goes somewhere real.
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
   { href: "/explore", label: "Explore", icon: ExploreIcon },
   { href: "/events/new", label: "Create", icon: CreateIcon },
-  { href: "/messages", label: "Messages", icon: MessagesIcon },
   { href: "/notifications", label: "Notifications", icon: NotificationsIcon },
 ];
 
-export function SideNav() {
+export async function SideNav() {
+  const user = await getCurrentUser();
+  const unread = user ? await unreadCount(user.id) : 0;
+
   return (
     <aside className="side-nav" aria-label="Primary">
       <nav className="side-nav-inner">
         <ul>
           {navItems.map((item) => {
             const Icon = item.icon;
+            const badge = item.href === "/notifications" && unread > 0 ? unread : null;
+
             return (
               <li key={item.href}>
                 <a href={item.href}>
                   <Icon />
-                  <span>{item.label}</span>
+                  <span>
+                    {item.label}
+                    {badge ? ` (${badge})` : ""}
+                  </span>
                 </a>
               </li>
             );
@@ -30,12 +46,31 @@ export function SideNav() {
             <span>Settings</span>
           </a>
 
-          <a className="profile-link" href="/profile">
-            <span className="profile-image" aria-hidden="true">
-              L
-            </span>
-            <span>Profile</span>
-          </a>
+          {user ? (
+            <>
+              <a className="profile-link" href="/profile">
+                {user.avatarUrl ? (
+                  <img className="profile-image" src={user.avatarUrl} alt="" />
+                ) : (
+                  <span className="profile-image" aria-hidden="true">
+                    {avatarInitial(user)}
+                  </span>
+                )}
+                <span>Profile</span>
+              </a>
+
+              <form action={signOut} className="side-nav-signout">
+                <button type="submit">Sign out</button>
+              </form>
+            </>
+          ) : (
+            <a className="profile-link" href="/login">
+              <span className="profile-image" aria-hidden="true">
+                →
+              </span>
+              <span>Sign in</span>
+            </a>
+          )}
         </div>
       </nav>
     </aside>
@@ -63,14 +98,6 @@ function CreateIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 5v14M5 12h14" />
-    </svg>
-  );
-}
-
-function MessagesIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M5 6h14v10H8l-3 3z" />
     </svg>
   );
 }
