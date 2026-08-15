@@ -78,6 +78,59 @@ describe("buildInstances", () => {
         interval: 2,
         byDay: ["MO", "WE"],
       }),
-    ).toBe("Every 2 weeks on MO, WE");
+    ).toBe("Every 2 weeks on Monday and Wednesday");
+  });
+
+  it("spells out positional monthly rules", () => {
+    expect(
+      buildRecurrenceSummary({
+        freq: "monthly",
+        interval: 1,
+        byDay: ["FR"],
+        bySetPosition: [1],
+      }),
+    ).toBe("Every month on the first Friday");
+  });
+
+  it("names the end of a bounded series", () => {
+    expect(
+      buildRecurrenceSummary({
+        freq: "daily",
+        interval: 1,
+        until: "2027-03-07T18:30",
+      }),
+    ).toBe("Every day, until 7 March 2027");
+  });
+
+  it("stops at the rolling window instead of the full horizon", () => {
+    const instances = buildInstances({
+      startsAtLocal: "2026-09-07T18:30",
+      durationMinutes: 60,
+      timezone: "America/New_York",
+      recurrence: { freq: "weekly", interval: 1, byDay: ["MO"] },
+      limit: 500,
+      through: new Date("2026-10-05T23:59:00.000Z"),
+    });
+
+    expect(instances.map((instance) => instance.localDate)).toEqual([
+      "2026-09-07",
+      "2026-09-14",
+      "2026-09-21",
+      "2026-09-28",
+      "2026-10-05",
+    ]);
+  });
+
+  it("skips occurrences before the requested window start", () => {
+    const instances = buildInstances({
+      startsAtLocal: "2026-09-07T18:30",
+      durationMinutes: 60,
+      timezone: "America/New_York",
+      recurrence: { freq: "weekly", interval: 1, byDay: ["MO"] },
+      limit: 2,
+      from: new Date("2026-09-20T00:00:00.000Z"),
+    });
+
+    expect(instances.map((instance) => instance.localDate)).toEqual(["2026-09-21", "2026-09-28"]);
   });
 });

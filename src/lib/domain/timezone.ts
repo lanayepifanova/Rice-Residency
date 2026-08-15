@@ -34,6 +34,20 @@ export function formatDateInTimeZone(date: Date, timezone: string): string {
   return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`;
 }
 
+/**
+ * The inverse of `zonedTimeToUtc`: turns a real instant into the floating date
+ * that recurrence rules operate on. Recurrence math runs on wall-clock times
+ * with no offset, so a UTC boundary such as "materialize through 12 months
+ * from now" has to be expressed in the series' own local terms before it can
+ * bound an RRULE.
+ */
+export function utcToFloatingDate(date: Date, timezone: string): Date {
+  const parts = getZonedParts(date, timezone);
+  return new Date(
+    Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second),
+  );
+}
+
 function parseLocalDateTime(value: string): LocalParts {
   const match = localDateTimePattern.exec(value);
   if (!match) {

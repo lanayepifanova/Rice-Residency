@@ -1,81 +1,56 @@
 import { rsvpSchema } from "@/lib/api/contracts";
-import { applyRsvp } from "@/lib/domain/rsvp";
-import { demoStore, rsvpKey } from "@/lib/domain/store";
+import { badRequest, errorResponse, readJson, requireApiUser } from "@/lib/api/http";
+import { submitRsvp, toServiceError } from "@/lib/server/rsvp";
 
-type Context = {
-  params: Promise<{ instanceId: string }>;
-};
+/**
+ * `PUT /event-instances/{id}/rsvp`
+ *
+ * The body may only ask for `going`, `maybe`, or `busy`. `waitlisted` is
+ * assigned by the server when capacity is full, so it is not accepted here —
+ * otherwise anyone could put themselves on a waitlist that has room, or off one
+ * that does not.
+ */
+export async function PUT(
+  request: Request,
+  context: RouteContext<"/api/event-instances/[instanceId]/rsvp">,
+) {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
 
-export async function PUT(request: Request, context: Context) {
-  const body: unknown = await request.json();
+  const body = await readJson(request);
+
+  if (body === null) {
+    return badRequest("Send a JSON body.");
+  }
+
   const parsed = rsvpSchema.safeParse(body);
 
   if (!parsed.success) {
-    return Response.json({ error: "Invalid RSVP request.", issues: parsed.error.flatten() }, { status: 400 });
+    return badRequest("Invalid RSVP request.", parsed.error);
   }
 
   const { instanceId } = await context.params;
-  const userId = request.headers.get("x-user-id") ?? "demo_user";
-  const instance = demoStore.instances.get(instanceId);
 
-  if (!instance) {
-    return Response.json({ error: "Event instance not found." }, { status: 404 });
-  }
-
-  if (instance.status === "cancelled") {
-    return Response.json({ error: "Cannot RSVP to a cancelled event instance." }, { status: 409 });
-  }
-
-  const series = demoStore.series.get(instance.seriesId);
-  if (!series || series.status === "cancelled") {
-    return Response.json({ error: "Event series is unavailable." }, { status: 409 });
-  }
-
-  const existingRsvps = Array.from(demoStore.rsvps.values())
-    .filter((rsvp) => rsvp.instanceId === instanceId)
-    .map((rsvp) => ({
-      userId: rsvp.userId,
-      status: rsvp.status,
-      guestCount: rsvp.guestCount,
-      waitlistRank: rsvp.waitlistRank,
-    }));
-
-  let result;
   try {
-    result = applyRsvp({
-      userId,
-      requestedStatus: parsed.data.status,
+    const outcome = await submitRsvp({
+      instanceId,
+      userId: auth.userId,
+      status: parsed.data.status,
       guestCount: parsed.data.guestCount,
-      capacity: series.capacity,
-      waitlistEnabled: series.waitlistEnabled,
-      existingRsvps,
+    });
+
+    return Response.json({
+      instanceId,
+      rsvp: {
+        status: outcome.rsvp.status,
+        guestCount: outcome.rsvp.guestCount,
+        partySize: outcome.rsvp.partySize,
+        waitlistRank: outcome.rsvp.waitlistRank,
+      },
+      capacity: outcome.capacity,
+      promotedUserIds: outcome.promotedUserIds,
     });
   } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : "Unable to update RSVP." },
-      { status: 409 },
-    );
+    return errorResponse(toServiceError(error));
   }
-
-  demoStore.rsvps.set(rsvpKey(instanceId, userId), {
-    instanceId,
-    userId,
-    status: result.status,
-    guestCount: result.guestCount,
-    waitlistRank: result.waitlistRank,
-  });
-
-  return Response.json({
-    instanceId,
-    rsvp: result,
-    notificationEvent: {
-      type: "rsvp_changed",
-      instanceId,
-      payload: {
-        status: result.status,
-        guestCount: result.guestCount,
-        partySize: result.partySize,
-      },
-    },
-  });
 }
