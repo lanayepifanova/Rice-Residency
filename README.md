@@ -1,4 +1,4 @@
-# Matane
+# Rice Residency
 
 Recurring-events social platform. Create an event that repeats, preview the
 dates before publishing, and let people RSVP per occurrence with guest counts,
