@@ -131,9 +131,10 @@ main {
   justify-content: space-between;
   border-bottom: 1px solid #000000;
   background: #ffffff;
+  /* Pulled back over the space the side nav reserves, so the name starts at
+     the left edge of the window rather than beside the nav. */
   margin-left: -180px;
   padding: 12px 16px;
-  padding-left: 196px;
 }
 
 .site-name,
@@ -255,6 +256,85 @@ main {
   margin-top: 32px;
 }
 
+.people-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+
+.people-search .field {
+  flex: 1 1 260px;
+  margin: 0;
+}
+
+.person-monogram {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: #f0efe9;
+  font-family: "Apple Chancery", "Snell Roundhand", "Brush Script MT", Georgia, serif;
+  font-size: 64px;
+}
+
+.person-facts {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 12px;
+  border: 1px solid #000000;
+}
+
+.person-fact {
+  display: grid;
+  gap: 2px;
+}
+
+.person-fact dt {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #666666;
+}
+
+.person-fact dd {
+  margin: 0;
+}
+
+.person-fact-note {
+  display: block;
+  color: #666666;
+  font-size: 13px;
+}
+
+.event-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.event-section-head h2 {
+  margin: 0;
+}
+
+.event-section-head h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.event-section-head h2 a:hover {
+  text-decoration: underline;
+}
+
+.event-section-note {
+  color: #666666;
+  font-size: 13px;
+}
+
 .event-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -320,12 +400,106 @@ main {
 .event-detail {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 32px;
   align-items: start;
 }
 
+/* The info column is a stack of distinct blocks — heading, facts, description,
+   RSVP — rather than a run of identical paragraphs. */
+.event-detail-info {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.event-detail-header {
+  display: grid;
+  gap: 8px;
+}
+
 .event-detail-info h1 {
-  margin-top: 0;
+  margin: 0;
+  font-size: clamp(30px, 3.6vw, 42px);
+  line-height: 1.08;
+}
+
+.event-detail-header .event-meta {
+  margin: 0;
+}
+
+/* "in 2 days" carries more weight than the rest of the meta line, so it gets a
+   frame instead of being buried mid-sentence. */
+.event-tag {
+  display: inline-block;
+  border: 1px solid #000000;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.event-tag-muted {
+  border-color: #999999;
+  color: #666666;
+  font-weight: 400;
+}
+
+.event-facts {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid #000000;
+}
+
+.event-fact {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 16px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid #dddddd;
+}
+
+.event-fact dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: #666666;
+}
+
+.event-fact dd {
+  margin: 0;
+  font-size: 15px;
+}
+
+.event-fact-note {
+  display: block;
+  font-size: 13px;
+  color: #666666;
+}
+
+.event-description {
+  max-width: 62ch;
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+.event-description p {
+  margin: 0;
+}
+
+.event-detail-info .rsvp-panel {
+  border-top: 1px solid #000000;
+  padding-top: 16px;
+}
+
+@media (min-width: 761px) {
+  .event-detail-image {
+    position: sticky;
+    top: 80px;
+  }
 }
 
 @media (max-width: 760px) {
@@ -339,6 +513,11 @@ main {
 
   .event-detail-image {
     max-height: 50vh;
+  }
+
+  .event-fact {
+    grid-template-columns: 72px 1fr;
+    gap: 12px;
   }
 }
 
@@ -487,7 +666,7 @@ button {
 
   .site-header {
     margin-left: -56px;
-    padding-left: 72px;
+    padding-left: 16px;
   }
 
   .side-nav:hover,
@@ -616,6 +795,7 @@ button {
 }
 
 .form-error,
+.banner-announcement,
 .banner-danger,
 .banner-success {
   margin: 0 0 16px;
@@ -625,6 +805,13 @@ button {
 
 .banner-danger {
   border-width: 2px;
+}
+
+/* Not an alert: this one is standing news about what is being planned, so it
+   reads quieter than the success and danger banners it shares a shape with. */
+.banner-announcement {
+  border-style: dashed;
+  font-size: 14px;
 }
 
 .form-actions {
@@ -703,9 +890,46 @@ button {
 
 .occurrence {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 56px 1fr;
+  gap: 16px;
   padding: 12px;
   border: 1px solid #000000;
+}
+
+/* A calendar-style badge gives the eye a fixed anchor to scan down the list,
+   instead of re-reading a full date sentence on every row. */
+.occurrence-date {
+  display: grid;
+  gap: 0;
+  align-content: start;
+  justify-items: center;
+  border: 1px solid #000000;
+  /* Wide enough for a written-out weekday, so "Wednesday" cannot wrap. */
+  min-width: 76px;
+  padding: 6px 6px 8px;
+  line-height: 1.2;
+}
+
+.occurrence-date-month {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.occurrence-date-day {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.occurrence-date-weekday {
+  font-size: 10px;
+  color: #666666;
+}
+
+.occurrence-body {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
 }
 
 .occurrence-when {
@@ -715,6 +939,23 @@ button {
 
 .occurrence-when a {
   color: #000000;
+  font-size: 17px;
+  text-decoration: none;
+}
+
+.occurrence-when a:hover,
+.occurrence-when a:focus-visible {
+  text-decoration: underline;
+}
+
+.occurrence-time {
+  font-size: 14px;
+  color: #666666;
+}
+
+.occurrence-past .occurrence-date {
+  border-color: #999999;
+  color: #666666;
 }
 
 .rsvp-panel {

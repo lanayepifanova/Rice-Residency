@@ -11,7 +11,7 @@ export async function SiteHeader() {
   return (
     <header className="site-header">
       <a className="site-name" href="/">
-        Matane
+        Rice Residency
       </a>
 
       <nav className="top-actions" aria-label="Main">
@@ -49,7 +49,7 @@ export async function SiteHeader() {
                 left pointing at nothing. */}
             <ul>
               <li>
-                <a href="/explore">Explore</a>
+                <a href="/explore">People</a>
               </li>
               <li>
                 <a href="/notifications">

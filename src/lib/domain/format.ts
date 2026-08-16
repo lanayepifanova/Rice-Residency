@@ -8,34 +8,32 @@ function formatter(timezone: string, options: Intl.DateTimeFormatOptions): Intl.
   return new Intl.DateTimeFormat("en-GB", { timeZone: timezone, ...options });
 }
 
-/** "Monday 7 September 2026, 18:30" */
+/**
+ * Times read as "5:00 PM". Formatted in en-US rather than the en-GB used for
+ * dates, because en-GB renders the meridiem lowercase.
+ */
+function timeFormatter(timezone: string): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+/** "Monday 7 September 2026, 6:30 PM" */
 export function formatOccurrence(date: Date, timezone: string): string {
-  return formatter(timezone, {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).format(date);
+  return `${formatDay(date, timezone)}, ${timeFormatter(timezone).format(date)}`;
 }
 
-/** "Mon 7 Sep, 18:30" — for cards and lists. */
+/** "Mon 7 Sep, 6:30 PM" — for cards and lists. */
 export function formatShort(date: Date, timezone: string): string {
-  return formatter(timezone, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).format(date);
+  return `${formatDateLabel(date, timezone)}, ${timeFormatter(timezone).format(date)}`;
 }
 
-/** "18:30 – 19:30" */
+/** "6:30 PM – 7:30 PM" */
 export function formatTimeRange(start: Date, end: Date, timezone: string): string {
-  const time = formatter(timezone, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const time = timeFormatter(timezone);
   return `${time.format(start)} – ${time.format(end)}`;
 }
 
@@ -49,9 +47,52 @@ export function formatDay(date: Date, timezone: string): string {
   }).format(date);
 }
 
-/** The short timezone label shown beside a time, e.g. "EDT". */
+/** "Sunday 30 Aug" — the date on its own, for a card inside a dated list. */
+export function formatDateLabel(date: Date, timezone: string): string {
+  const badge = formatDateBadge(date, timezone);
+  // The weekday is written out: on a card it is the part that says whether the
+  // date is one you can make, so it is not the place to abbreviate.
+  const weekday = formatter(timezone, { weekday: "long" }).format(date);
+  // Title case rather than the badge's caps: this one sits in a heading.
+  const month = badge.month.charAt(0) + badge.month.slice(1).toLowerCase();
+  return `${weekday} ${badge.day} ${month}`;
+}
+
+/**
+ * The parts of a date shown in a list badge: "AUG" / "16" / "Sun". Split rather
+ * than pre-joined so the badge can size and stack each part on its own.
+ */
+export function formatDateBadge(
+  date: Date,
+  timezone: string,
+): { month: string; day: string; weekday: string } {
+  const parts = formatter(timezone, {
+    weekday: "long",
+    day: "numeric",
+    month: "short",
+  }).formatToParts(date);
+
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((entry) => entry.type === type)?.value ?? "";
+
+  return {
+    // en-GB abbreviates September as "Sept"; the badge wants a uniform width.
+    month: part("month").toUpperCase().slice(0, 3),
+    day: part("day"),
+    weekday: part("weekday"),
+  };
+}
+
+/**
+ * The short timezone label shown beside a time, e.g. "CDT". Formatted in en-US
+ * rather than the en-GB used everywhere else, because en-GB renders US zones as
+ * "GMT-5" and the name of the zone is the whole point of the label.
+ */
 export function timezoneLabel(date: Date, timezone: string): string {
-  const parts = formatter(timezone, { timeZoneName: "short" }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    timeZoneName: "short",
+  }).formatToParts(date);
   return parts.find((part) => part.type === "timeZoneName")?.value ?? timezone;
 }
 

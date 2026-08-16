@@ -48,6 +48,13 @@ export async function updateProfile(userId: string, input: ProfileUpdate): Promi
         // so @Lana and @lana cannot both be claimed.
         username: parsed.data.username.toLowerCase(),
         bio: emptyToNull(parsed.data.bio),
+        riceYear: emptyToNull(parsed.data.riceYear),
+        major: emptyToNull(parsed.data.major),
+        projectName: emptyToNull(parsed.data.projectName),
+        projectSummary: emptyToNull(parsed.data.projectSummary),
+        projectUrl: emptyToNull(parsed.data.projectUrl),
+        pastProjects: emptyToNull(parsed.data.pastProjects),
+        helpNeeded: emptyToNull(parsed.data.helpNeeded),
         instagram: emptyToNull(parsed.data.instagram),
         twitter: emptyToNull(parsed.data.twitter),
         birthday: emptyToNull(parsed.data.birthday),

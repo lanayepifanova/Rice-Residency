@@ -9,7 +9,8 @@ import { signOut } from "../login/actions";
 // not have. Everything listed here goes somewhere real.
 const navItems = [
   { href: "/", label: "Home", icon: HomeIcon },
-  { href: "/explore", label: "Explore", icon: ExploreIcon },
+  { href: "/explore", label: "People", icon: ExploreIcon },
+  { href: "/archive", label: "Archive", icon: ArchiveIcon },
   { href: "/events/new", label: "Create", icon: CreateIcon },
   { href: "/notifications", label: "Notifications", icon: NotificationsIcon },
 ];
@@ -90,6 +91,14 @@ function ExploreIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="8" />
       <path d="m14.5 9.5-2 5-3 1 2-5z" />
+    </svg>
+  );
+}
+
+function ArchiveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 7h16v13H4zM3 4h18v3H3zM10 11h4" />
     </svg>
   );
 }

@@ -30,7 +30,7 @@ export default async function LoginPage({
   return (
     <main className="auth-main">
       <section className="auth-panel">
-        <h1>Matane</h1>
+        <h1>Rice Residency</h1>
         <p>Recurring events with RSVPs, capacity, and waitlists.</p>
 
         {sent ? (
