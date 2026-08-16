@@ -22,6 +22,13 @@ export async function saveProfileAction(
       name: text(formData.get("name")),
       username: text(formData.get("username")),
       bio: text(formData.get("bio")),
+      riceYear: text(formData.get("riceYear")),
+      major: text(formData.get("major")),
+      projectName: text(formData.get("projectName")),
+      projectSummary: text(formData.get("projectSummary")),
+      projectUrl: text(formData.get("projectUrl")),
+      pastProjects: text(formData.get("pastProjects")),
+      helpNeeded: text(formData.get("helpNeeded")),
       instagram: text(formData.get("instagram")),
       twitter: text(formData.get("twitter")),
       birthday: text(formData.get("birthday")) || undefined,
@@ -37,6 +44,7 @@ export async function saveProfileAction(
 
   revalidatePath("/profile");
   revalidatePath("/settings/profile");
+  revalidatePath("/explore");
   revalidatePath("/");
 
   return { status: "saved", message: "Profile saved." };

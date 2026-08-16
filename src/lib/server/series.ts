@@ -1,5 +1,6 @@
 import type { EventInstance, EventSeries, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { seriesImageAt } from "@/lib/domain/event-images";
 import {
   eventSeriesCreateSchema,
   recurrenceSchema,
@@ -233,7 +234,9 @@ function materializedThroughFor(occurrences: Array<{ startsAt: string }>): Date 
 export async function materializeSeries(seriesId: string): Promise<number> {
   const series = await prisma.eventSeries.findUnique({ where: { id: seriesId } });
 
-  if (!series || series.status === "cancelled") {
+  // Only an active series has settled dates. A draft is still being planned,
+  // so generating occurrences for it would invent dates nobody has agreed to.
+  if (!series || series.status !== "active") {
     return 0;
   }
 
@@ -273,12 +276,17 @@ export async function materializeSeries(seriesId: string): Promise<number> {
     return 0;
   }
 
+  // New dates continue the series' deck from where the existing ones left off,
+  // so the pool is walked once rather than restarted every top-up.
+  const alreadyGenerated = await prisma.eventInstance.count({ where: { seriesId } });
+
   const result = await prisma.eventInstance.createMany({
-    data: occurrences.map((occurrence) => ({
+    data: occurrences.map((occurrence, position) => ({
       seriesId,
       startsAt: new Date(occurrence.startsAt),
       endsAt: new Date(occurrence.endsAt),
       localDate: occurrence.localDate,
+      coverImage: seriesImageAt(seriesId, alreadyGenerated + position),
     })),
     skipDuplicates: true,
   });
@@ -938,4 +946,21 @@ export async function loadInstanceView(
     past: instance.startsAt.getTime() < Date.now(),
     cancelled: instance.status === "cancelled" || instance.series.status === "cancelled",
   };
+}
+
+/**
+ * Where a series URL sends someone: its next date, or the most recent one if
+ * they have all happened, or the home page if it has no dates at all.
+ */
+export async function nextOccurrenceHref(seriesId: string): Promise<string> {
+  const upcoming = await prisma.eventInstance.findFirst({
+    where: { seriesId, startsAt: { gte: new Date() }, status: { not: "cancelled" } },
+    orderBy: { startsAt: "asc" },
+  });
+
+  const instance =
+    upcoming ??
+    (await prisma.eventInstance.findFirst({ where: { seriesId }, orderBy: { startsAt: "desc" } }));
+
+  return instance ? `/events/${seriesId}/${instance.id}` : "/";
 }

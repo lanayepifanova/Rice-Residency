@@ -1,3 +1,8 @@
+/**
+ * Covers for events. Portraits do not belong in here — a photo of a person
+ * reads as "this event is about them" — so anything of an identifiable
+ * individual stays out of the pool even when the file is still in the folder.
+ */
 export const eventImagePool = [
   "/photos/event-images/image-01.jpeg",
   "/photos/event-images/image-02.jpeg",
@@ -19,7 +24,6 @@ export const eventImagePool = [
   "/photos/event-images/image-18.jpeg",
   "/photos/event-images/image-19.jpeg",
   "/photos/event-images/image-20.jpeg",
-  "/photos/event-images/image-21.png",
   "/photos/event-images/image-22.jpeg",
   "/photos/event-images/image-23.jpeg",
   "/photos/event-images/image-24.jpeg",
@@ -30,6 +34,13 @@ export const eventImagePool = [
   "/photos/event-images/image-29.jpeg",
   "/photos/event-images/image-30.jpeg",
   "/photos/event-images/image-31.jpeg",
+  "/photos/event-images/image-32.jpeg",
+  "/photos/event-images/image-33.jpeg",
+  "/photos/event-images/image-34.jpeg",
+  "/photos/event-images/image-35.jpeg",
+  "/photos/event-images/image-36.jpeg",
+  "/photos/event-images/image-37.jpeg",
+  "/photos/event-images/image-38.jpeg",
 ];
 
 /**
@@ -48,6 +59,37 @@ export function coverImageFor(seriesId: string, explicit?: string | null): strin
   }
 
   return eventImagePool[hash % eventImagePool.length];
+}
+
+/**
+ * Hands out covers without repeating one until the whole pool has been used.
+ * Hashing each id independently looks random but collides quickly — a run of
+ * dates from one event would show the same photograph three times — so a list
+ * is dealt from a shuffled deck instead.
+ */
+export function imageAllocator(seed = 1729): () => string {
+  const shuffled = shuffleWithSeed(eventImagePool, seed);
+  let index = 0;
+
+  return () => shuffled[index++ % shuffled.length];
+}
+
+/**
+ * The cover for the nth date of a series. Each series shuffles the pool its own
+ * way, and walks it in order, so a run of dates never repeats a photograph
+ * until the whole pool has been spent.
+ */
+export function seriesImageAt(seriesId: string, index: number): string {
+  const shuffled = shuffleWithSeed(eventImagePool, seedFrom(seriesId));
+  return shuffled[index % shuffled.length];
+}
+
+function seedFrom(value: string): number {
+  let hash = 7;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) % 2147483647;
+  }
+  return hash || 1;
 }
 
 export function assignEventImages<T>(items: T[]): Array<T & { image: string }> {

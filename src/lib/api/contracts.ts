@@ -133,6 +133,20 @@ export const profileUpdateSchema = z.object({
     .max(30)
     .regex(/^[a-z0-9_.]+$/i, "Usernames can use letters, numbers, dots, and underscores."),
   bio: z.string().trim().max(280).optional(),
+  riceYear: z.string().trim().max(40).optional(),
+  major: z.string().trim().max(80).optional(),
+  projectName: z.string().trim().max(80).optional(),
+  projectSummary: z.string().trim().max(200).optional(),
+  projectUrl: z
+    .string()
+    .trim()
+    .max(200)
+    .refine((value) => value === "" || /^https?:\/\/\S+$/.test(value), {
+      message: "Use a full link, starting with http:// or https://",
+    })
+    .optional(),
+  pastProjects: z.string().trim().max(600).optional(),
+  helpNeeded: z.string().trim().max(400).optional(),
   instagram: z.string().trim().max(120).optional(),
   twitter: z.string().trim().max(120).optional(),
   birthday: z

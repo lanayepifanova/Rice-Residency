@@ -74,6 +74,24 @@ model User {
   bio       String?
   instagram String?
   twitter   String?
+
+  /// Where someone is in school. Free text rather than an enum: "Junior",
+  /// "PhD 3", and "Alum '24" are all answers people actually give.
+  riceYear String?
+  major    String?
+
+  /// What this person is building. The house is a residency, so the project is
+  /// as much a part of a profile as the name is — it is what people are here to
+  /// find each other over.
+  projectName    String?
+  projectSummary String?
+  projectUrl     String?
+
+  /// The rest of the picture: what they have already shipped, and where they
+  /// are stuck. The second one is the reason to read a profile at all — it is
+  /// the ask someone else in the house might be able to answer.
+  pastProjects String?
+  helpNeeded   String?
   /// Date only. Stored as a string so a timezone can never shift someone's
   /// birthday across a day boundary.
   birthday  String?
@@ -140,6 +158,11 @@ model EventInstance {
   localDate String
 
   status EventInstanceStatus @default(scheduled)
+
+  /// The photo for this date. Assigned once when the occurrence is generated
+  /// and stored rather than derived, so the card in a list and the page it
+  /// opens always show the same picture no matter how either is queried.
+  coverImage String?
 
   /// Single-occurrence overrides. Null means "inherit from the series", which
   /// is why these are separate nullable columns rather than a JSON blob: an

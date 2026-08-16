@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Matane",
+  title: "Rice Residency",
   description: "Recurring events with RSVP capacity, guest counts, and waitlists.",
 };
 

@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
@@ -10,13 +11,11 @@ import {
   formatDay,
   formatOccurrence,
   formatTimeRange,
-  relativeDay,
   timezoneLabel,
 } from "@/lib/domain/format";
-import { buildRecurrenceSummary } from "@/lib/domain/recurrence";
 import { displayName } from "@/lib/server/profile";
 import { getAttendance } from "@/lib/server/rsvp";
-import { loadInstanceView, occurrenceTitle, readRecurrence } from "@/lib/server/series";
+import { loadInstanceView, occurrenceTitle } from "@/lib/server/series";
 import { shareUrl } from "@/lib/server/share-links";
 import { HostControls } from "../../../components/HostControls";
 import { RsvpControls } from "../../../components/RsvpControls";
@@ -41,12 +40,12 @@ export async function generateMetadata({
   const when = formatOccurrence(instance.startsAt, view.series.timezone);
 
   return {
-    title: `${title} · ${when} · Matane`,
+    title: `${title} · ${when} · Rice Residency`,
     description: locationName ? `${when} · ${locationName}` : when,
     openGraph: {
       title,
       description: locationName ? `${when} · ${locationName}` : when,
-      images: coverImageFor(instance.seriesId, view.series.coverImage),
+      images: instance.coverImage ?? coverImageFor(instance.seriesId, view.series.coverImage),
     },
   };
 }
@@ -94,38 +93,52 @@ export default async function InstancePage({
         ) : null}
 
         <p className="breadcrumb">
-          <a href={`/events/${seriesId}`}>← All occurrences of {series.title}</a>
+          <Link href="/">← All dates</Link>
         </p>
 
         <article className="event-detail">
           <section className="event-detail-info">
-            <h1>{title}</h1>
-            <p className="event-meta">
-              {formatDay(instance.startsAt, series.timezone)} ·{" "}
-              {formatTimeRange(instance.startsAt, instance.endsAt, series.timezone)}{" "}
-              {timezoneLabel(instance.startsAt, series.timezone)} ·{" "}
-              {relativeDay(instance.startsAt, series.timezone)}
-            </p>
-            <p>Hosted by {organizer ? displayName(organizer) : "someone"}</p>
+            <header className="event-detail-header">
+              <h1>{title}</h1>
+            </header>
 
-            {locationName ? (
-              <p>
-                {series.locationUrl ? (
-                  <a href={series.locationUrl}>{locationName}</a>
-                ) : (
-                  locationName
-                )}
-              </p>
+            <dl className="event-facts">
+              <div className="event-fact">
+                <dt>When</dt>
+                <dd>
+                  {formatDay(instance.startsAt, series.timezone)}
+                  <span className="event-fact-note">
+                    {formatTimeRange(instance.startsAt, instance.endsAt, series.timezone)}{" "}
+                    {timezoneLabel(instance.startsAt, series.timezone)}
+                    {instance.status === "moved" ? " · moved from its usual slot" : ""}
+                  </span>
+                </dd>
+              </div>
+
+              {locationName ? (
+                <div className="event-fact">
+                  <dt>Where</dt>
+                  <dd>
+                    {series.locationUrl ? (
+                      <a href={series.locationUrl}>{locationName}</a>
+                    ) : (
+                      locationName
+                    )}
+                  </dd>
+                </div>
+              ) : null}
+
+              <div className="event-fact">
+                <dt>Host</dt>
+                <dd>{organizer ? displayName(organizer) : "someone"}</dd>
+              </div>
+            </dl>
+
+            {description ? (
+              <div className="event-description">
+                <p>{description}</p>
+              </div>
             ) : null}
-
-            {description ? <p>{description}</p> : null}
-
-            <p className="field-hint">
-              Part of a series that repeats {buildRecurrenceSummary(readRecurrence(series)).toLowerCase()}.
-              {instance.status === "moved"
-                ? " This occurrence was moved from its usual slot."
-                : ""}
-            </p>
 
             <RsvpControls
               seriesId={seriesId}
@@ -149,7 +162,7 @@ export default async function InstancePage({
 
           <img
             className="event-detail-image"
-            src={coverImageFor(seriesId, series.coverImage)}
+            src={instance.coverImage ?? coverImageFor(seriesId, series.coverImage)}
             alt=""
           />
         </article>

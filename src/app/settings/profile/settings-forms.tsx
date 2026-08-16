@@ -18,6 +18,13 @@ export type ProfileFormValues = {
   name: string;
   username: string;
   bio: string;
+  riceYear: string;
+  major: string;
+  projectName: string;
+  projectSummary: string;
+  projectUrl: string;
+  pastProjects: string;
+  helpNeeded: string;
   instagram: string;
   twitter: string;
   birthday: string;
@@ -87,6 +94,65 @@ export function ProfileForm({ values }: { values: ProfileFormValues }) {
         <label className="field">
           <span className="field-label">Quick description</span>
           <textarea name="bio" defaultValue={values.bio} placeholder="A short note about you." />
+        </label>
+
+        <label className="field">
+          <span className="field-label">Year at Rice</span>
+          <input name="riceYear" defaultValue={values.riceYear} placeholder="Junior, PhD 2, Alum" />
+        </label>
+
+        <label className="field">
+          <span className="field-label">Major</span>
+          <input name="major" defaultValue={values.major} placeholder="Computer Science" />
+        </label>
+
+        <label className="field">
+          <span className="field-label">What you are working on</span>
+          <input
+            name="projectName"
+            defaultValue={values.projectName}
+            placeholder="Project name"
+          />
+          <span className="field-hint">
+            Shown on the people page, so the house can find each other by what they are building.
+          </span>
+        </label>
+
+        <label className="field">
+          <span className="field-label">Project, in one line</span>
+          <input
+            name="projectSummary"
+            defaultValue={values.projectSummary}
+            placeholder="What it does, briefly."
+          />
+        </label>
+
+        <label className={errorField === "projectUrl" ? "field field-invalid" : "field"}>
+          <span className="field-label">Project link</span>
+          <input name="projectUrl" defaultValue={values.projectUrl} placeholder="https://" />
+          {errorField === "projectUrl" && state.status === "error" ? (
+            <span className="field-error" role="alert">
+              {state.message}
+            </span>
+          ) : null}
+        </label>
+
+        <label className="field">
+          <span className="field-label">Past projects</span>
+          <textarea
+            name="pastProjects"
+            defaultValue={values.pastProjects}
+            placeholder="Things you have already built or shipped."
+          />
+        </label>
+
+        <label className="field">
+          <span className="field-label">What you need help with</span>
+          <textarea
+            name="helpNeeded"
+            defaultValue={values.helpNeeded}
+            placeholder="The ask someone else in the house might be able to answer."
+          />
         </label>
 
         <label className="field">

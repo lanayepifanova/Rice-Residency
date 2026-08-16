@@ -1,8 +1,18 @@
-# Matane
+# Rice Residency
 
-Recurring-events social platform. Create an event that repeats, preview the
-dates before publishing, and let people RSVP per occurrence with guest counts,
-capacity limits, and a waitlist.
+The calendar and directory for Rice Residency, a hacker house in Houston.
+
+The house runs a handful of standing events — weekly Sunday coworking sessions,
+biweekly Friday house parties, and VC-sponsored networking dinners — so the home
+page is organised by event rather than by date: each series lists its own run of
+dates, people RSVP per date with guest counts, capacity limits, and a waitlist,
+and dates that have happened move to the archive. Events still being planned are
+announced by name until their schedule is settled.
+
+The other half is the people. Every resident has a profile with their year at
+Rice, major, what they are building, what they have shipped before, and what
+they need help with — searchable, so the house can find each other by project
+and not only by name.
 
 ## Stack
 
@@ -19,7 +29,7 @@ capacity limits, and a waitlist.
 npm install
 cp .env.example .env.local   # then fill it in
 npx prisma migrate deploy
-npm run db:seed              # optional: nine example events
+npm run db:seed              # optional: the three house events and a demo directory
 npm run dev
 ```
 

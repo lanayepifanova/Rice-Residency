@@ -1,71 +1,71 @@
 import Link from "next/link";
-import { exploreEvents, type ExploreFilter } from "@/lib/server/feed";
-import { EventGrid } from "../components/EventGrid";
+import { listPeople } from "@/lib/server/people";
+import { PeopleGrid } from "../components/PeopleGrid";
 import { SideNav } from "../components/SideNav";
 import { SiteHeader } from "../components/SiteHeader";
 
 export const dynamic = "force-dynamic";
 
-const filters: Array<{ value: ExploreFilter; label: string }> = [
-  { value: "all", label: "Everything" },
-  { value: "week", label: "This week" },
-  { value: "month", label: "This month" },
-  { value: "open", label: "No capacity limit" },
-];
-
-function readFilter(value: string | string[] | undefined): ExploreFilter {
+function readQuery(value: string | string[] | undefined): string {
   const candidate = Array.isArray(value) ? value[0] : value;
-  return filters.some((filter) => filter.value === candidate)
-    ? (candidate as ExploreFilter)
-    : "all";
+  return typeof candidate === "string" ? candidate.trim() : "";
 }
 
+/**
+ * Explore is people, not events — the events are on the home page. This is the
+ * house directory: who is around, and what they are working on.
+ */
 export default async function ExplorePage({ searchParams }: PageProps<"/explore">) {
   const params = await searchParams;
-  const filter = readFilter(params.when);
-  const events = await exploreEvents(filter);
+  const query = readQuery(params.q);
+  const people = await listPeople(query);
+  const building = people.filter((person) => person.project);
 
   return (
     <>
       <SiteHeader />
       <SideNav />
       <main>
-        <h1 className="welcome-heading">Explore</h1>
+        <h1 className="welcome-heading">People</h1>
 
         {params.share === "expired" ? (
           <p className="banner-danger" role="status">
-            That share link has been revoked or never existed. Everything public is still below.
+            That share link has been revoked or never existed.
           </p>
         ) : null}
 
-        <p className="field-hint">
-          Every public event, soonest first. Anyone can browse this, signed in or not.
-        </p>
+        {/* A plain GET form, so a search is a real URL that can be shared. */}
+        <form className="people-search" action="/explore" method="get">
+          <label className="field">
+            <span className="field-label">Search people and projects</span>
+            <input
+              name="q"
+              defaultValue={query}
+              placeholder="A name, a major, a project, or what someone needs help with"
+            />
+          </label>
+          <button type="submit">Search</button>
+          {query ? <Link href="/explore">Clear</Link> : null}
+        </form>
 
-        {/* Links rather than a JavaScript filter, so each view is a real URL
-            that can be bookmarked and shared. */}
-        <nav className="filter-row" aria-label="Filter events">
-          {filters.map((option) => (
-            <a
-              key={option.value}
-              href={option.value === "all" ? "/explore" : `/explore?when=${option.value}`}
-              className={option.value === filter ? "filter-chip filter-chip-active" : "filter-chip"}
-            >
-              {option.label}
-            </a>
-          ))}
-        </nav>
+        {query ? (
+          <p className="field-hint">
+            {people.length} {people.length === 1 ? "person" : "people"} matching “{query}”
+            {building.length ? ` · ${building.length} with a project listed` : ""}.
+          </p>
+        ) : null}
 
-        <EventGrid
-          events={events}
+        <PeopleGrid
+          people={people}
           empty={
-            filter === "all" ? (
+            query ? (
               <>
-                Nothing public yet. <Link href="/events/new">Create an event</Link> and it appears here.
+                Nobody matches “{query}”. <Link href="/explore">See everyone</Link>.
               </>
             ) : (
               <>
-                Nothing matches that filter. <Link href="/explore">See everything</Link>.
+                Nobody has a profile yet. <Link href="/settings/profile">Set yours up</Link> and you
+                appear here.
               </>
             )
           }
