@@ -58,18 +58,21 @@ enum NotificationDeliveryStatus {
 }
 
 model User {
-  /// Mirrors Supabase `auth.users.id` (a UUID). Not generated here: the row is
-  /// created on first sign-in using the id Supabase already issued, so a
-  /// session gives you the app user id without a second lookup.
-  id        String   @id
-  /// Always present — magic-link sign-in is keyed on email.
+  /// This app owns identity outright: there is no external auth provider, so
+  /// the id is minted here when the account is created.
+  id        String   @id @default(uuid())
+  /// Always present — sign-in is keyed on email.
   email     String   @unique
+  /// scrypt hash of the account password, in the format written by
+  /// `src/lib/server/password.ts`. Nullable because a person can exist before
+  /// they have credentials: seeded rows and invited emails both start here.
+  passwordHash String?
   /// Unknown at sign-up; the user sets it on their profile afterwards.
   name      String?
   /// Public handle. Unique when set, but optional so sign-in never blocks on it.
   username  String?  @unique
   phone     String?
-  /// Public URL of the avatar in the Supabase `avatars` storage bucket.
+  /// Path of the avatar under `public/uploads`, served as a plain static file.
   avatarUrl String?
   bio       String?
   instagram String?
@@ -106,6 +109,26 @@ model User {
   invitesSent            EventInvite[]           @relation("InviteSender")
   invitesAccepted        EventInvite[]           @relation("InviteRecipient")
   shareLinksCreated      EventShareLink[]
+  sessions               Session[]
+}
+
+/// A signed-in browser.
+///
+/// Sessions live in the database rather than in a signed cookie so that signing
+/// out actually revokes access instead of merely asking the browser to forget a
+/// token it could still replay.
+model Session {
+  /// SHA-256 of the cookie value, never the value itself. A leaked database
+  /// dump therefore cannot be used to impersonate anyone.
+  tokenHash String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model EventSeries {

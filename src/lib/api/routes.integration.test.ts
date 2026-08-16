@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import type { User } from "@prisma/client";
 
 // Route handlers read identity through getCurrentUser. Mocking it here stands
-// in for a Supabase session without needing a browser or a live cookie jar.
+// in for a signed-in session without needing a browser or a live cookie jar.
 const currentUser = vi.hoisted(() => ({ value: null as User | null }));
 
 vi.mock("@/lib/auth", () => ({

@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { hashPassword } from "../src/lib/server/password";
 import { buildInstances, type RecurrenceRuleInput } from "../src/lib/domain/recurrence";
 import { eventImagePool, seriesImageAt } from "../src/lib/domain/event-images";
 
@@ -25,6 +26,13 @@ if (!connectionString) {
 }
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString }) });
+
+/**
+ * Password for every seeded account, so the demo house is walkable: sign in as
+ * lana@example.com and you are the organizer. Overridable, and irrelevant in
+ * any real use since these addresses are all @example.com.
+ */
+const SEED_PASSWORD = process.env.SEED_PASSWORD ?? "residency";
 
 /** Everything Rice Residency runs is in Houston, so every time is Central. */
 const TIMEZONE = "America/Chicago";
@@ -266,20 +274,25 @@ async function main() {
   const userIds = new Map<string, string>();
 
   for (const user of users) {
-    // Seeded users have no Supabase identity, so their ids are generated here.
-    // A real sign-in with the same email adopts the row by email lookup.
     const existing = await prisma.user.findUnique({ where: { email: user.email } });
+
+    // Never re-hash over a password someone actually chose: re-running the seed
+    // refreshes profile copy, and silently resetting a login would be a nasty
+    // way to find that out.
+    const passwordHash = existing?.passwordHash ?? (await hashPassword(SEED_PASSWORD));
 
     const row = await prisma.user.upsert({
       where: { email: user.email },
       create: {
         id: existing?.id ?? randomUUID(),
         email: user.email,
+        passwordHash,
         name: user.name,
         username: user.username,
         ...profileFields(user),
       },
       update: {
+        passwordHash,
         name: user.name,
         username: user.username,
         ...profileFields(user),

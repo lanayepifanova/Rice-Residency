@@ -1,17 +1,19 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
-import { sendMagicLink } from "./actions";
+import { MIN_PASSWORD_LENGTH } from "@/lib/server/password";
+import { signIn, signUp } from "./actions";
 
 type LoginSearchParams = {
-  sent?: string;
   error?: string;
   next?: string;
+  mode?: string;
 };
 
 const errorMessages: Record<string, string> = {
+  "invalid-credentials": "That email and password do not match an account.",
   "invalid-email": "That does not look like a valid email address.",
-  "send-failed": "We could not send the link just now. Please try again.",
-  "link-invalid": "That link has expired or was already used. Request a new one.",
+  "weak-password": `Passwords must be at least ${MIN_PASSWORD_LENGTH} characters.`,
+  "email-taken": "There is already an account with that email. Sign in instead.",
 };
 
 export default async function LoginPage({
@@ -19,13 +21,18 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<LoginSearchParams>;
 }) {
-  const { sent, error, next } = await searchParams;
+  const { error, next, mode } = await searchParams;
   const returnTo = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const isSignUp = mode === "signup";
 
   // Already signed in — no reason to show the form.
   if (await getCurrentUser()) {
     redirect(returnTo);
   }
+
+  const otherMode = isSignUp
+    ? `/login?next=${encodeURIComponent(returnTo)}`
+    : `/login?mode=signup&next=${encodeURIComponent(returnTo)}`;
 
   return (
     <main className="auth-main">
@@ -33,46 +40,53 @@ export default async function LoginPage({
         <h1>Rice Residency</h1>
         <p>Recurring events with RSVPs, capacity, and waitlists.</p>
 
-        {sent ? (
-          <div className="auth-notice" role="status">
-            <h2>Check your email</h2>
-            <p>
-              We sent a sign-in link to <strong>{sent}</strong>. Open it on this device to continue.
+        <form action={isSignUp ? signUp : signIn}>
+          <input type="hidden" name="next" value={returnTo} />
+
+          <label>
+            Email
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              required
+              autoFocus
+            />
+          </label>
+
+          <label>
+            Password
+            <input
+              name="password"
+              type="password"
+              autoComplete={isSignUp ? "new-password" : "current-password"}
+              minLength={isSignUp ? MIN_PASSWORD_LENGTH : undefined}
+              required
+            />
+          </label>
+
+          {error ? (
+            <p className="auth-error" role="alert">
+              {errorMessages[error] ?? "Something went wrong. Please try again."}
             </p>
-            <p className="auth-hint">
-              The link expires in one hour. Nothing arrived? Check spam, then request another.
-            </p>
-            <a href={`/login?next=${encodeURIComponent(returnTo)}`}>Use a different email</a>
-          </div>
-        ) : (
-          <form action={sendMagicLink}>
-            <input type="hidden" name="next" value={returnTo} />
+          ) : null}
 
-            <label>
-              Email
-              <input
-                name="email"
-                type="email"
-                autoComplete="email"
-                placeholder="you@example.com"
-                required
-                autoFocus
-              />
-            </label>
+          <button type="submit">{isSignUp ? "Create account" : "Sign in"}</button>
 
-            {error ? (
-              <p className="auth-error" role="alert">
-                {errorMessages[error] ?? "Something went wrong. Please try again."}
-              </p>
-            ) : null}
-
-            <button type="submit">Email me a sign-in link</button>
-
-            <p className="auth-hint">
-              No password needed. If you do not have an account yet, one is created for you.
-            </p>
-          </form>
-        )}
+          <p className="auth-hint">
+            {isSignUp ? (
+              <>
+                At least {MIN_PASSWORD_LENGTH} characters. Already have an account?{" "}
+                <a href={otherMode}>Sign in</a>.
+              </>
+            ) : (
+              <>
+                New here? <a href={otherMode}>Create an account</a>.
+              </>
+            )}
+          </p>
+        </form>
       </section>
     </main>
   );

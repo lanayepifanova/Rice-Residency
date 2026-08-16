@@ -18,20 +18,38 @@ and not only by name.
 
 - Next.js 16 (App Router, Server Components, Server Actions)
 - TypeScript
-- PostgreSQL via Prisma 7
-- Supabase for auth (magic link) and storage
+- PostgreSQL via Prisma 7, running locally
+- Email + password auth and profile photos, both owned by this app
 - Tailwind CSS
 - Vitest
 
 ## Setup
 
 ```bash
+brew services start postgresql@14   # the database this app talks to
+createdb rice_residency             # first time only
+
+# Two migrations predate this app owning its own database and revoke grants
+# from roles Supabase used to provide. Plain Postgres has no such roles, and
+# `REVOKE ... FROM <missing role>` is an error, so create them empty. They can
+# log in to nothing and own nothing — they exist only to be revoked from.
+# Roles are cluster-wide, so this is once per machine, not once per database:
+# "role already exists" means it is already done.
+psql -d rice_residency -c "CREATE ROLE anon NOLOGIN" -c "CREATE ROLE authenticated NOLOGIN"
+
 npm install
-cp .env.example .env.local   # then fill it in
+cp .env.example .env.local   # then fill in your macOS username
 npx prisma migrate deploy
 npm run db:seed              # optional: the three house events and a demo directory
 npm run dev
 ```
+
+Everything is on this machine: Postgres holds the data, `public/uploads/` holds
+profile photos, and neither is cleared by refreshing the page or restarting the
+dev server. To see what is stored, open `psql rice_residency`.
+
+Seeded accounts sign in with the password `residency` — `lana@example.com` is
+the organizer of all three events.
 
 ## Quality checks
 
@@ -43,7 +61,7 @@ npm run build
 ```
 
 `test:integration` writes to whatever database `DATABASE_URL` points at. It
-cleans up after itself, but point it at a development project.
+cleans up after itself, but point it at a development database.
 
 ## How it fits together
 
@@ -57,7 +75,15 @@ cleans up after itself, but point it at a development project.
 - `src/app/` — pages, Server Actions, and the few client components that need
   pending and error states.
 
-Two rules are worth knowing before changing anything:
+**Auth is local and deliberately simple.** Accounts are an email and a scrypt
+hash (`src/lib/server/password.ts`); a session is a random token in an httpOnly
+cookie whose SHA-256 is a row in `Session` (`src/lib/server/session.ts`), so
+signing out revokes access rather than trusting the browser to forget. There is
+no email sender, which means no password reset — resetting one is a `psql`
+update away. Putting this app on the public internet would need that gap closed
+first.
+
+Two more rules are worth knowing before changing anything:
 
 **A series start is a wall-clock time, not an instant.** `startsAtLocal` is text
 like `2026-09-07T18:30`, paired with an IANA timezone. That is what keeps a

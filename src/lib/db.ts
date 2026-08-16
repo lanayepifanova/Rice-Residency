@@ -5,9 +5,9 @@ import { PrismaPg } from "@prisma/adapter-pg";
 // Connections now go through a driver adapter, so the URL is supplied here
 // rather than in prisma/schema.prisma.
 //
-// DATABASE_URL must point at the transaction-mode pooler (port 6543). The
-// direct host (db.<ref>.supabase.co) is IPv6-only and unreachable from
-// serverless platforms.
+// DATABASE_URL points at Postgres running on this machine. The data lives on
+// disk in the Postgres data directory, so it outlives the dev server, the
+// browser, and a reboot.
 function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL;
 

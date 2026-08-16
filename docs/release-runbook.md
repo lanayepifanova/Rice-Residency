@@ -10,7 +10,8 @@ npm run build
 ```
 
 All four must pass. The integration suite writes to the database in
-`DATABASE_URL`, so point it at a staging project rather than production.
+`DATABASE_URL`. It cleans up after itself, but point it at a development
+database rather than one holding real RSVPs.
 
 ## Environment
 
@@ -18,12 +19,13 @@ Required, per `.env.example`:
 
 | Variable | Used by | Notes |
 | --- | --- | --- |
-| `DATABASE_URL` | app runtime | Transaction pooler, port 6543 |
-| `DIRECT_URL` | Prisma CLI | Session pooler, port 5432, for DDL |
-| `NEXT_PUBLIC_SUPABASE_URL` | app + browser | |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | app + browser | Safe to expose |
-| `SUPABASE_SECRET_KEY` | server only | Storage uploads; never `NEXT_PUBLIC_` |
-| `NEXT_PUBLIC_SITE_URL` | optional | Pins magic-link and share-link origin |
+| `DATABASE_URL` | app runtime | Local Postgres |
+| `DIRECT_URL` | Prisma CLI | Same URL — no pooler in front of it |
+| `SEED_PASSWORD` | optional | Password for seeded accounts; defaults to `residency` |
+| `NEXT_PUBLIC_SITE_URL` | optional | Pins the share-link origin |
+
+There are no third-party keys. Auth and uploads are both handled by the app
+itself, so the whole environment is a database URL.
 
 ## Migrations
 
@@ -31,16 +33,31 @@ Required, per `.env.example`:
 npx prisma migrate deploy
 ```
 
-Five migrations, applied in order:
+Nine migrations, applied in order. A database created from scratch needs the
+`anon` and `authenticated` roles to exist first — migration 2 revokes grants
+from them, and revoking from a missing role is an error:
+
+```bash
+psql -d rice_residency -c "CREATE ROLE anon NOLOGIN" -c "CREATE ROLE authenticated NOLOGIN"
+```
+
 
 1. `20260813160753_init` — base schema
 2. `20260813161500_lockdown_rls` — RLS on every table, grants revoked from
    `anon` and `authenticated`
-3. `20260813205840_link_user_to_supabase_auth` — `User.email` required
+3. `20260813205840_link_user_to_supabase_auth` — `User.email` required. Named
+   for an auth provider the app no longer uses; the migration itself is just
+   the column constraint, and its name is fixed by Prisma's history.
 4. `20260814190000_events_profiles_invites_shares` — profile fields, invites,
    share-link ownership, notification dedupe and read state, instance override
    columns, and `startsAtLocal` from `timestamp` to `text`
-5. `20260814190500_avatars_storage_bucket` — public `avatars` storage bucket
+5. `20260814190500_avatars_storage_bucket` — a no-op on plain Postgres. It is
+   guarded on a `storage` schema that only the old hosted provider had.
+6. `20260816004314_people_projects` — project fields on `User`
+7. `20260816004641_people_profile_details` — remaining profile fields
+8. `20260816005558_instance_cover_image` — per-occurrence cover image
+9. `20260816202545_local_password_auth` — `User.passwordHash` and the `Session`
+   table, replacing the external auth provider
 
 ### Review notes
 
@@ -61,7 +78,7 @@ Five migrations, applied in order:
 npm run db:seed
 ```
 
-Idempotent. Creates seven users and nine public event series, with RSVPs across
+Idempotent. Creates eight users and nine public event series, with RSVPs across
 every status, one event filled to capacity with two people waitlisted, one event
 with the waitlist disabled, and one cancelled occurrence. Intended for local
 work and staging, not production.
@@ -112,8 +129,9 @@ DELETE FROM "_prisma_migrations"
 
 This drops event invites and profile data permanently. Take a backup first.
 
-Migration 5 only inserts a storage bucket row; leaving it in place is harmless
-and avoids deleting anyone's uploaded photo.
+Migration 5 does nothing on plain Postgres, so there is nothing to roll back.
+Profile photos are files under `public/uploads/avatars/`; a schema rollback
+never touches them, and deleting them is a separate, manual decision.
 
 ## Monitoring
 

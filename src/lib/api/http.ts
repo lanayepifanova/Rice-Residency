@@ -7,7 +7,7 @@ import { SeriesError } from "@/lib/server/series";
  * The signed-in user for a route handler, or a 401 response.
  *
  * Route handlers are reachable directly, not only through the app's own UI, so
- * identity is read from the verified Supabase session on every call. Nothing
+ * identity is read from the session cookie on every call. Nothing
  * about the caller is ever taken from a request header — a header is written by
  * whoever made the request, which makes it a claim, not a fact.
  */
