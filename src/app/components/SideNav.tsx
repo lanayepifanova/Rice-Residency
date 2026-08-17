@@ -1,7 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { getCurrentUser } from "@/lib/auth";
-import { unreadCount } from "@/lib/server/notifications";
 import { avatarInitial } from "@/lib/server/profile";
 import { signOut } from "../login/actions";
 
@@ -17,7 +16,6 @@ const navItems = [
 
 export async function SideNav() {
   const user = await getCurrentUser();
-  const unread = user ? await unreadCount(user.id) : 0;
 
   return (
     <aside className="side-nav" aria-label="Primary">
@@ -25,16 +23,12 @@ export async function SideNav() {
         <ul>
           {navItems.map((item) => {
             const Icon = item.icon;
-            const badge = item.href === "/notifications" && unread > 0 ? unread : null;
 
             return (
               <li key={item.href}>
                 <a href={item.href}>
                   <Icon />
-                  <span>
-                    {item.label}
-                    {badge ? ` (${badge})` : ""}
-                  </span>
+                  <span>{item.label}</span>
                 </a>
               </li>
             );

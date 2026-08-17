@@ -1,12 +1,10 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 
 import { getCurrentUser } from "@/lib/auth";
-import { unreadCount } from "@/lib/server/notifications";
 import { displayName } from "@/lib/server/profile";
 
 export async function SiteHeader() {
   const user = await getCurrentUser();
-  const unread = user ? await unreadCount(user.id) : 0;
 
   return (
     <header className="site-header">
@@ -35,7 +33,7 @@ export async function SiteHeader() {
             ) : (
               <a className="profile-card" href="/login">
                 <strong>Sign in</strong>
-                <span>Magic link, no password</span>
+                <span>Email and password</span>
               </a>
             )}
 
@@ -52,9 +50,7 @@ export async function SiteHeader() {
                 <a href="/explore">People</a>
               </li>
               <li>
-                <a href="/notifications">
-                  Notifications{unread > 0 ? ` (${unread})` : ""}
-                </a>
+                <a href="/notifications">Notifications</a>
               </li>
               <li>
                 <a href="/settings/profile">Profile settings</a>
